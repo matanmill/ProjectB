@@ -35,4 +35,7 @@ def resample_audio(base_path, target_path):
 dev_small_path = FSD50K_paths["code_exploring_dev"]
 resampled_path = r'C:\FSD50K\Code_Exploring\resampled_dev'
 
-resample_audio(dev_small_path, resampled_path)
+# resample_audio(dev_small_path, resampled_path)
+tree = fs_tree(FSD50K_paths["FSD50K"])
+with open('Hirerachy.json', 'w') as json_file:
+    json.dump(tree, json_file)
