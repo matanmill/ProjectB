@@ -1,23 +1,38 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+import os
+import json
+from Paths import FSD50K_paths
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+def fs_tree(root):
+    results = {}
+    for (dirpath, dirnames, filenames) in os.walk(root):
+        parts = dirpath.split(os.sep)
+        curr = results
+        for p in parts:
+            curr = curr.setdefault(p, {})
+    return results
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
-#####this is a test!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!######################
+
+def get_immediate_files(a_dir):
+    return [name for name in os.listdir(a_dir) if os.path.isfile(os.path.join(a_dir, name))]
 
 
-#### Michael check if this works #####
-### now does this work?###
+def resample_audio(base_path, target_path):
+    resample_cnt = 0
+    if not os.path.exists(target_path):
+        os.mkdir(target_path)
+    files = get_immediate_files(base_path)
+    for audiofile in files:
+        os.system('sox ' + base_path + audiofile + ' -r 16000 ' + target_path + audiofile + '> /dev/null 2>&1')
+        resample_cnt += 1
+        if resample_cnt % 50 == 0:
+            print('Resampled {:d} samples.'.format(resample_cnt))
+    print('Resampling finished.')
+    print('--------------------------------------------')
 
-## WHAT ABOUT THIS ##
+
+# checking what the resample audio does
+dev_small_path = FSD50K_paths["code_exploring_dev"]
+resampled_path = r'C:\FSD50K\Code_Exploring\resampled_dev'
+
+resample_audio(dev_small_path, resampled_path)
