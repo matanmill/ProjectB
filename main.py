@@ -23,7 +23,7 @@ def resample_audio(base_path, target_path):
         os.mkdir(target_path)
     files = get_immediate_files(base_path)
     for audiofile in files:
-        os.system('sox ' + base_path + audiofile + ' -r 16000 ' + target_path + audiofile + '> /dev/null 2>&1')
+        os.system('sox ' + base_path + audiofile + ' -r 16000 ' + target_path + audiofile + '> /dev/null 2>&1') #librosa
         resample_cnt += 1
         if resample_cnt % 50 == 0:
             print('Resampled {:d} samples.'.format(resample_cnt))
@@ -35,7 +35,4 @@ def resample_audio(base_path, target_path):
 dev_small_path = FSD50K_paths["code_exploring_dev"]
 resampled_path = r'C:\FSD50K\Code_Exploring\resampled_dev'
 
-# resample_audio(dev_small_path, resampled_path)
-tree = fs_tree(FSD50K_paths["FSD50K"])
-with open('Hirerachy.json', 'w') as json_file:
-    json.dump(tree, json_file)
+resample_audio(dev_small_path, resampled_path)

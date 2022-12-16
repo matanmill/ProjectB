@@ -4,6 +4,8 @@ import numpy as np
 import json
 import os
 from Paths import FSD50K_paths
+import librosa
+import soundfile as sf
 
 # dataset downloaded from https://zenodo.org/record/4060432#.YXXR0tnMLfs
 # please change it to your FSD50K dataset path
@@ -11,28 +13,6 @@ from Paths import FSD50K_paths
 
 fsd_path = FSD50K_paths['code_exploring_dev']
 resampled_path = r'C:\FSD50K\Code_Exploring\dev_resampled'
-
-# convert all samples to 16kHZ
-print('Now converting all FSD50K audio to 16kHz, this may take dozens of minutes.')
-
-
-def get_immediate_files(a_dir):
-    return [name for name in os.listdir(a_dir) if os.path.isfile(os.path.join(a_dir, name))]
-
-
-def resample_audio(base_path, target_path):
-    resample_cnt = 0
-    if not os.path.exists(target_path):
-        os.mkdir(target_path)
-    files = get_immediate_files(base_path)
-    for audiofile in files:
-        os.system('sox ' + base_path + audiofile + ' -r 16000 ' + target_path + audiofile + '> /dev/null 2>&1')
-        resample_cnt += 1
-        if resample_cnt % 1000 == 0:
-            print('Resampled {:d} samples.'.format(resample_cnt))
-    print('Resampling finished.')
-    print('--------------------------------------------')
-
 
 # create json datafiles for training, validation, and evaluation set
 fsd_dev_csv = FSD50K_paths['ground_truth_dev']
@@ -112,6 +92,7 @@ for i in range(len(fsdeval)):
 with open('./datafiles/fsd50k_eval_full.json', 'w') as f:
     json.dump({'data': vc_data}, f, indent=1)
 print('Processed {:d} samples for the FSD50K evaluation set.'.format(cnt))
+
 
 # generate balanced sampling weight file
 os.system('python ../../src/gen_weight_file.py --dataset fsd50k --label_indices_path {:s} --datafile_path {:s}'.format(

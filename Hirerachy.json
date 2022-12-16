@@ -1,1 +1,18 @@
-{"C:": {"FSD50K": {"Code_Exploring": {"dev": {}, "eval": {}, "resampled_dev": {}}, "FSD50K.dev_audio": {}, "FSD50K.doc": {}, "FSD50K.eval_audio": {}, "FSD50K.ground_truth": {}, "FSD50K.metadata": {"collection": {}}}}}
+{
+    "C:": {
+        "FSD50K": {
+            "Code_Exploring": {
+                "dev": {},
+                "eval": {},
+                "resampled_dev": {}
+            },
+            "FSD50K.dev_audio": {},
+            "FSD50K.doc": {},
+            "FSD50K.eval_audio": {},
+            "FSD50K.ground_truth": {},
+            "FSD50K.metadata": {
+                "collection": {}
+            }
+        }
+    }
+}
