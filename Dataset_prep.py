@@ -12,7 +12,7 @@ import soundfile as sf
 # the data organization might change with versioning, the code is tested early 2021
 
 fsd_path = FSD50K_paths['code_exploring_dev']
-resampled_path = r'C:\FSD50K\Code_Exploring\dev_resampled'
+un_resampled_path = r'C:\FSD50K\FSD50K.dev_audio'
 
 # create json datafiles for training, validation, and evaluation set
 fsd_dev_csv = FSD50K_paths['ground_truth_dev']
@@ -40,7 +40,7 @@ for i in range(len(fsdeval)):
         new_label_list.append(label)
     new_label_list = ','.join(new_label_list)
     # note, all recording we use are 16kHZ.
-    cur_dict = {"wav": resampled_path + fileid + '.wav', "labels": new_label_list}
+    cur_dict = {"wav": un_resampled_path + '\\'+ fileid + '.wav', "labels": new_label_list}
 
     if set_info == 'trai':
         fsd_tr_data.append(cur_dict)
