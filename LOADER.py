@@ -88,7 +88,7 @@ val_dataset = AudioDataset(audio_paths_val, labels_val)
 eval_dataset = AudioDataset(audio_paths_eval, labels_eval)
 
 # Create the dataloader
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=4,)
+train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
 
