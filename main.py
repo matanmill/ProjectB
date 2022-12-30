@@ -1,38 +1,27 @@
-import os
-import json
 from Paths import FSD50K_paths
+from BaseArchitecture import BaseTransformer
+import torch
+from torch import nn
 
+###########################################################################
+# part 1 - Load data, seperate, batchify + define training device
 
-def fs_tree(root):
-    results = {}
-    for (dirpath, dirnames, filenames) in os.walk(root):
-        parts = dirpath.split(os.sep)
-        curr = results
-        for p in parts:
-            curr = curr.setdefault(p, {})
-    return results
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+###########################################################################
+# part 2 - define the model and hyperparameters
+# all hyperparameters are already implemented inside the class
 
-def get_immediate_files(a_dir):
-    return [name for name in os.listdir(a_dir) if os.path.isfile(os.path.join(a_dir, name))]
+labels_size = 200  # 200 final categories
+model = BaseTransformer().to(device)
 
+###########################################################################
+# part 3 - define the training process and train
 
-def resample_audio(base_path, target_path):
-    resample_cnt = 0
-    if not os.path.exists(target_path):
-        os.mkdir(target_path)
-    files = get_immediate_files(base_path)
-    for audiofile in files:
-        os.system('sox ' + base_path + audiofile + ' -r 16000 ' + target_path + audiofile + '> /dev/null 2>&1') #librosa
-        resample_cnt += 1
-        if resample_cnt % 50 == 0:
-            print('Resampled {:d} samples.'.format(resample_cnt))
-    print('Resampling finished.')
-    print('--------------------------------------------')
+criterion = nn.HuberLoss()
 
+###########################################################################
+# part 4 - evaluate mAP of the model
 
-# checking what the resample audio does
-dev_small_path = FSD50K_paths["code_exploring_dev"]
-resampled_path = r'C:\FSD50K\Code_Exploring\resampled_dev'
-
-resample_audio(dev_small_path, resampled_path)
+###########################################################################
+# part 5 - save everything
