@@ -6,6 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 import json
 from IPython.display import Audio
 from tqdm import tqdm
+import resampy
 
 
 # Open the JSON file and read the contents
@@ -48,20 +49,31 @@ class AudioDataset(Dataset):
     def __init__(self, audio_paths, labels):
         self.audio_paths = audio_paths
         self.labels = labels
+        self.segments = []
+        for audiopath, label in zip(audio_paths, labels):
+            # Load the audio data from the file
+            audio, sr = sf.read(audiopath)
+            # Resample the audio data to a sample rate of 16000 Hz
+            audio = resampy.resample(audio, sr, 16000)
+            print(f"Resampled audio data shape: {audio.shape}")
+
+            # If the audio data is less than 1 second, repeat it to make the duration 1 second
+            if len(audio) < sr:
+                audio = np.tile(audio, int(16000 / len(audio)))
+
+            # Split the audio data into non-overlapping segments of 1 second
+            segments = [(i, audio[i:i+sr], label) for i in range(0, len(audio), 16000)]
+
+            # Add the segments to the list, extend is for multiple elements to be added
+            self.segments.extend(segments)
 
     def __len__(self):
-        return len(self.audio_paths)
+        return len(self.segments)
 
-    def __getitem__(self, idx):
-        audio_path = self.audio_paths[idx]
-        label = self.labels[idx]
+    def __getitem__(self, index):
+        # Return the segments, labels
+        return self.segments[index]
 
-        # Load the audio file and apply any desired preprocessing
-        audio, _ = sf.read(audio_path)
-        audio = audio.astype(np.float32)
-        audio = audio / np.abs(audio).max()  # Normalize the audio data
-
-        return audio, label
 
 def collate_fn(samples):
     # Find the longest audio signal in the batch
@@ -88,22 +100,23 @@ val_dataset = AudioDataset(audio_paths_val, labels_val)
 eval_dataset = AudioDataset(audio_paths_eval, labels_eval)
 
 # Create the dataloader
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
-val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
-eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn)
+train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=collate_fn, num_workers=1)
+val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=collate_fn)
+eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate_fn=collate_fn)
 
 ### test the execution:
 num_samples = len(train_dataset)
 train_dataloader = tqdm(train_dataloader, total=num_samples, desc="Processing audio data")
 print("wii")
 # Example , Iterate through the dataloader to yield batches of data
-for audio_data, labels in train_dataloader:
-    #Train your model on the batch of data
-    pass
-    #print(f"Audio shape: {audio_data.shape}")
-    #print("labels")
-    #print("dataloader",train_dataloader)
-    #Audio(audio_data[25].numpy(), rate=16000)
+if __name__ == '__main__':
+    for audio_data, labels in train_dataloader:
+        #Train your model on the batch of data
+        pass
+        #print(f"Audio shape: {audio_data.shape}")
+        #print("labels")
+        #print("dataloader",train_dataloader)
+        #Audio(audio_data[25].numpy(), rate=16000)
 
 print("wiiiiiiii")
 
