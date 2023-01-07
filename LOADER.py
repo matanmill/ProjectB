@@ -1,17 +1,11 @@
-import librosa
 import torch
 import numpy as np
 import soundfile as sf
 from torch.utils.data import Dataset, DataLoader
 import json
-from IPython.display import Audio
 from tqdm import tqdm
 import resampy
 
-
-# Open the JSON file and read the contents
-with open('./Hirerachy.json', 'r') as f:
-    eval_data = json.load(f)
 #### The JSONs are list of dictionaries... each one of the has path and label
 with open('./datafiles/fsd50k_eval_full.json', 'r') as f:
     eval_data = json.load(f)
@@ -22,35 +16,39 @@ with open('./datafiles/fsd50k_tr_full.json', 'r') as f:
 with open('./datafiles/fsd50k_val_full.json', 'r') as f:
     val_data = json.load(f)
 
+
 # Access an internal dictionary and extract paths and labels for Audiodataset __init__
 def make_paths(data):
     internal_dict = data['data']
-    audio_paths=[]
-    labels=[]
-    for cnt,path in enumerate(internal_dict):
-    # Access a value in the internal dictionary
+    audio_paths = []
+    labels_b = []
+
+    for cnt, path in enumerate(internal_dict):
+        # Access a value in the internal dictionary
         wav = (internal_dict[cnt]).get('wav')
         label = (internal_dict[cnt]).get('labels')
         audio_paths.append(wav)
-        labels.append(label)
-    return audio_paths,labels
-
-audio_paths_eval,labels_eval = make_paths(eval_data)
-audio_paths_train,labels_train = make_paths(train_data)
-audio_paths_val,labels_val = make_paths(val_data)
+        labels_b.append(label)
+    return audio_paths, labels_b
 
 
-#import torchaudio
+audio_paths_eval, labels_eval = make_paths(eval_data)
+audio_paths_train, labels_train = make_paths(train_data)
+audio_paths_val, labels_val = make_paths(val_data)
 
-#dataset = torchaudio.datasets.LIBRISPEECH('./Dataset', 'train-clean-100', download=True)
+
+# import torchaudio
+
+# dataset = torchaudio.datasets.LIBRISPEECH('./Dataset', 'train-clean-100', download=True)
 
 
 class AudioDataset(Dataset):
-    def __init__(self, audio_paths, labels):
+    def __init__(self, audio_paths, labels_b):
         self.audio_paths = audio_paths
         self.labels = labels
         self.segments = []
         for audiopath, label in zip(audio_paths, labels):
+
             # Load the audio data from the file
             audio, sr = sf.read(audiopath)
             # Resample the audio data to a sample rate of 16000 Hz
@@ -81,16 +79,14 @@ def collate_fn(samples):
 
     # Create tensors to hold the padded audio signals and labels/metadata
     audio_tensor = torch.zeros(len(samples), max_length)
-    labels = []
-
+    labels_b = []
 
     # Pad and stack the audio signals, and collect the labels and metadata
     for i, s in enumerate(samples):
         audio_tensor[i, :len(s[0])] = torch.tensor(s[0])
         labels.append(s[1])
 
-
-    return audio_tensor, labels
+    return audio_tensor, labels_b
 
 
 # Select a subset of the dataset to use
@@ -119,4 +115,3 @@ if __name__ == '__main__':
         #Audio(audio_data[25].numpy(), rate=16000)
 
 print("wiiiiiiii")
-

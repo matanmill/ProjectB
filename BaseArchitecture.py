@@ -31,8 +31,17 @@ class FrontEnd(nn.Module):
         return x
 
 
+class LambdaLayer(nn.Module):
+    def __init__(self, lambd):
+        super(LambdaLayer, self).__init__()
+        self.lambd = lambd
+
+    def forward(self, x):
+        return self.lambd(x)
+
+
 def transformer_block(dim_model, num_head, dim_feedforward, dropout,
-                      num_encode_layers, dense_dim, pooling_kernel, pooling=True):
+                      num_encode_layers, dense_dim, pooling_kernel, stride):
     encoder_layer = nn.TransformerEncoderLayer(d_model=dim_model,
                                                nhead=num_head,
                                                dim_feedforward=dim_feedforward,
@@ -47,9 +56,9 @@ def transformer_block(dim_model, num_head, dim_feedforward, dropout,
         nn.ReLU(),
         nn.Linear(in_features=dense_dim, out_features=dense_dim),
         nn.ReLU(),
-    )
-    if pooling:
-        sequence.append(nn.AvgPool1d(kernel_size=pooling_kernel, stride=2))
+        LambdaLayer(lambda x: x.transpose(1, 2)),
+        nn.AvgPool1d(kernel_size=pooling_kernel, stride=stride),
+        LambdaLayer(lambda x: x.transpose(1, 2)))
     return sequence
 
 
@@ -59,17 +68,17 @@ class BaseTransformer(nn.Module):
     Initial Transformer class (16/12/22), from a guide to transformer architectures
     with some minor changes.
     """
-
     # constructor
     def __init__(
             self,
             dim_model=64,
             dropout=0.1,
-            dense_dim=256,
+            dense_dim=128,
             num_head=8,
-            pooling_kernel=2,
+            pooling_kernel_initial=2,
+            pooling_kernel_last=10,
             num_encode_layers=2,
-            dim_feedforward=128,
+            dim_feedforward=2048,
             label_number=200
     ):
         super().__init__()
@@ -80,40 +89,58 @@ class BaseTransformer(nn.Module):
 
         # Layers
         self.positional_encoder = PositionalEncoding(d_model=dim_model, dropout=dropout)
-        self.embedding = FrontEnd(inputdim=400, output_dim=64)
-        self.output = nn.Linear(in_features=dense_dim, out_features=label_number)
+        self.embedding = FrontEnd(inputdim=400, output_dim=dim_model)
+        self.output1 = nn.Linear(in_features=dense_dim, out_features=dim_feedforward)
+        self.output2 = nn.Linear(in_features=dim_feedforward, out_features=label_number)
+        self.latent1 = nn.Linear(in_features=dense_dim, out_features=dim_model)
+        self.latent2 = nn.Linear(in_features=dense_dim, out_features=dim_model)
         self.transformer_1 = transformer_block(dim_model=dim_model, num_head=num_head, dim_feedforward=dim_feedforward,
                                                dropout=dropout, num_encode_layers=num_encode_layers,
-                                               dense_dim=dense_dim, pooling_kernel=pooling_kernel)
+                                               dense_dim=dense_dim, pooling_kernel=pooling_kernel_initial, stride=2)
         self.transformer_2 = transformer_block(dim_model=dim_model, num_head=num_head, dim_feedforward=dim_feedforward,
                                                dropout=dropout, num_encode_layers=num_encode_layers,
-                                               dense_dim=dense_dim, pooling_kernel=pooling_kernel)
+                                               dense_dim=dense_dim, pooling_kernel=pooling_kernel_initial, stride=2)
         self.transformer_3 = transformer_block(dim_model=dim_model, num_head=num_head, dim_feedforward=dim_feedforward,
                                                dropout=dropout, num_encode_layers=num_encode_layers,
-                                               dense_dim=dense_dim, pooling_kernel=pooling_kernel, pooling=False)
-        self.init_weights()  # will probably remove
+                                               dense_dim=dense_dim, pooling_kernel=pooling_kernel_last, stride=1)
+
+        self.init_weights()
 
     def init_weights(self):
         initrange = 0.1
-        self.out.weight.data.uniform_(-initrange, initrange)
-        self.out.bias.data.zero_()
-        self.dense.weight.data.uniform_(-initrange, initrange)
-        self.dense.bias.data.zero_()
+
+        # initializing weights for the transformer blocks
+        transformer_blocks = [self.transformer_1, self.transformer_2, self.transformer_3]
+        for block in transformer_blocks:
+            if isinstance(block, nn.Linear):
+                block.weight.data.uniform_(initrange, initrange)
+                block.bias.data.zero_()
+
+        # initializing weights fc layers
+        linear_layers = [self.latent1, self.latent2, self.output1, self.output2]
+        for layer in linear_layers:
+            layer.weight.data.uniform_(-initrange, initrange)
+            layer.bias.data.zero_()
 
     def forward(self, source):
         # source size = (Sequence Len, Batch Size)
 
         # Embedding phase
-        source = self.embedding(source) * math.sqrt(self.dim_model)  # remove normalization
+        source = self.embedding(source)
 
         # Positional Encoding
         source = self.positional_encoder(source)
 
         # blocks of transformer
         x1 = self.transformer_1(source)
+        x1 = func.relu(self.latent1(x1))
         x1 = self.transformer_2(x1)
+        x1 = func.relu(self.latent2(x1))
         x1 = self.transformer_3(x1)
-        output = func.relu(self.output(x1))
+
+        # output
+        output = func.relu(self.output1(x1))
+        output = func.relu(self.output2(output))
         return output
 
 
