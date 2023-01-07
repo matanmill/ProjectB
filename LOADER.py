@@ -45,9 +45,10 @@ audio_paths_val, labels_val = make_paths(val_data)
 class AudioDataset(Dataset):
     def __init__(self, audio_paths, labels_b):
         self.audio_paths = audio_paths
-        self.labels = labels_b
+        self.labels = labels
         self.segments = []
-        for audiopath, label in zip(audio_paths, labels_b):
+        for audiopath, label in zip(audio_paths, labels):
+
             # Load the audio data from the file
             audio, sr = sf.read(audiopath)
             # Resample the audio data to a sample rate of 16000 Hz
@@ -59,7 +60,7 @@ class AudioDataset(Dataset):
                 audio = np.tile(audio, int(16000 / len(audio)))
 
             # Split the audio data into non-overlapping segments of 1 second
-            segments = [(i, audio[i:i + sr], label) for i in range(0, len(audio), 16000)]
+            segments = [(i, audio[i:i+sr], label) for i in range(0, len(audio), 16000)]
 
             # Add the segments to the list, extend is for multiple elements to be added
             self.segments.extend(segments)
@@ -106,11 +107,11 @@ print("wii")
 # Example , Iterate through the dataloader to yield batches of data
 if __name__ == '__main__':
     for audio_data, labels in train_dataloader:
-        # Train your model on the batch of data
+        #Train your model on the batch of data
         pass
-        # print(f"Audio shape: {audio_data.shape}")
-        # print("labels")
-        # print("dataloader",train_dataloader)
-        # Audio(audio_data[25].numpy(), rate=16000)
+        #print(f"Audio shape: {audio_data.shape}")
+        #print("labels")
+        #print("dataloader",train_dataloader)
+        #Audio(audio_data[25].numpy(), rate=16000)
 
 print("wiiiiiiii")
