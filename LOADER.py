@@ -43,7 +43,7 @@ audio_paths_val, labels_val = make_paths(val_data)
 
 
 class AudioDataset(Dataset):
-    def __init__(self, audio_paths, labels_b):
+    def __init__(self, audio_paths, labels):
         self.audio_paths = audio_paths
         self.labels = labels
         self.segments = []

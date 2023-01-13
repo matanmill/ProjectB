@@ -4,7 +4,7 @@ from torch import nn
 import LOADER
 import time
 import torch.optim as opt
-from Train import train, evaluate
+from Train import train, evaluate, test
 from utils import SaveBestModel, save_plots, save_model
 =======
 
@@ -84,5 +84,5 @@ print('TRAINING COMPLETE')
 ###########################################################################
 # part 4 - test
 
-###########################################################################
-# part 5 - save everything
+Final_Accuracy = test(model=base_model, dataloader_test=testloader, criterion=criterion, device=device)
+print("Final accuracy for the model, based on mAP metric is " + str(Final_Accuracy))
