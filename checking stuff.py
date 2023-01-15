@@ -1,4 +1,5 @@
-from Paths import FSD50K_paths
+x = range(1,50)
+for index, evar in enumerate(x):
+    print(str(index))
 
-path1 = FSD50K_paths['code_exploring_eval']
-print(path1)
+print(index)
