@@ -11,7 +11,7 @@ import soundfile as sf
 # please change it to your FSD50K dataset path
 # the data organization might change with versioning, the code is tested early 2021
 
-fsd_path = FSD50K_paths['code_exploring_dev']
+fsd_path = FSD50K_paths['code_exploring_eval']
 un_resampled_path = r'C:\FSD50K\FSD50K.dev_audio'
 
 # create json datafiles for training, validation, and evaluation set
@@ -85,7 +85,7 @@ for i in range(len(fsdeval)):
 
     if len(new_label_list) != 0:
         new_label_list = ','.join(new_label_list)
-        cur_dict = {"wav": fsd_path + '/FSD50K.eval_audio_16k/' + fileid + '.wav', "labels": new_label_list}
+        cur_dict = {"wav": fsd_path + '\\'+ fileid + '.wav', "labels": new_label_list}
         vc_data.append(cur_dict)
         cnt += 1
 
