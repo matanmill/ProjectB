@@ -6,7 +6,6 @@ import time
 import torch.optim as opt
 from Train import train, evaluate, test
 from utils import SaveBestModel, save_plots, save_model
-=======
 
 
 ###########################################################################
@@ -14,9 +13,24 @@ from utils import SaveBestModel, save_plots, save_model
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-trainloader = LOADER.train_dataloader
-validloader = LOADER.val_dataloader
-testloader = LOADER.eval_dataloader
+# trainloader = LOADER.train_dataloader
+# validloader = LOADER.val_dataloader
+# testloader = LOADER.eval_dataloader
+
+label_vocabulary_path = r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv'
+train_path = './datafiles/fsd50k_tr_full.json'
+eval_path = './datafiles/fsd50k_eval_full.json'
+val_path = './datafiles/fsd50k_val_full.json'
+
+train_dataset = LOADER.AudioDataset(train_path, label_vocabulary_path,run_small_data=True)
+val_dataset = LOADER.AudioDataset(eval_path, label_vocabulary_path,run_small_data=True)
+eval_dataset = LOADER.AudioDataset(val_path, label_vocabulary_path,run_small_data=True)
+
+# Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
+train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=LOADER.audio_collate_fn)
+val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=LOADER.audio_collate_fn)
+eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate_fn=LOADER.audio_collate_fn)
+
 
 ###########################################################################
 # part 2 - define the model and hyperparameters

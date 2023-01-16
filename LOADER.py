@@ -11,29 +11,37 @@ import pandas as pd
 
 
 # Open the JSON file and read the contents
+####### this is the input from the user... all other things : make_paths.. in the init
 with open('./Hirerachy.json', 'r') as f:
     eval_data = json.load(f)
 #### The JSONs are list of dictionaries... each one of the has path and label
-with open('./datafiles/fsd50k_eval_full.json', 'r') as f:
-    eval_data = json.load(f)
+##### this is delivered to the class , train val as parameter!!!!
 
-with open('./datafiles/fsd50k_tr_full.json', 'r') as f:
-    train_data = json.load(f)
+# with open('./datafiles/fsd50k_eval_full.json', 'r') as f:
+#     eval_data = json.load(f)
+#
+# with open('./datafiles/fsd50k_tr_full.json', 'r') as f:
+#     train_data = json.load(f)
+#
+# with open('./datafiles/fsd50k_val_full.json', 'r') as f:
+#     val_data = json.load(f)
+#
+# label_vocabulary = pd.read_csv(r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',header=None)
+# print(label_vocabulary.iloc[:,2])
 
-with open('./datafiles/fsd50k_val_full.json', 'r') as f:
-    val_data = json.load(f)
-
-label_vocabulary = pd.read_csv(r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',header=None)
-print(label_vocabulary.iloc[:,2])
-
-# Access an internal dictionary and extract paths and labels for Audiodataset __init__
-def make_paths(data,vocabulary):
+# extract paths and labels . labels as Multi-Hot vector
+#@ data: wavs and label encoding. see json's.
+#@ vocabulary: csv that maps label encoding to numerical value between 0-199
+#@ default flag for running on small_data
+def make_paths(data,vocabulary,run_small_data=False,num_small_samples=10):
     one_hot_vec = torch.zeros(200,1)
     internal_dict = data['data']
     audio_paths=[]
     labels=[]
     for cnt,path in enumerate(internal_dict):
     # Access a value in the internal dictionary
+        if(cnt > num_small_samples and run_small_data):
+            break
         one_hot_vec = torch.zeros(200, 1)
         wav = (internal_dict[cnt]).get('wav')
         label = (internal_dict[cnt]).get('labels')
@@ -44,28 +52,35 @@ def make_paths(data,vocabulary):
         labels.append(one_hot_vec)
     return audio_paths,labels
 
+######### this is delivered to __init__
+'''
 audio_paths_eval,labels_eval = make_paths(eval_data,label_vocabulary)
 print(torch.nonzero(labels_eval[0]))
 audio_paths_train,labels_train = make_paths(train_data,label_vocabulary)
 audio_paths_val,labels_val = make_paths(val_data,label_vocabulary)
-
+'''
 
 #import torchaudio
 
 #dataset = torchaudio.datasets.LIBRISPEECH('./Dataset', 'train-clean-100', download=True)
 
 class AudioDataset(Dataset):
-    def __init__(self, audio_paths, labels):
-        self.audio_paths = audio_paths
-        self.labels = labels
+    def __init__(self,json_path,vacbulary_path,run_small_data=False):
+        with open(json_path, 'r') as f:
+            audio_data = json.load(f)
+
+        label_vocabulary = pd.read_csv(vacbulary_path, header=None)
+        audio_paths_list, labels_list = make_paths(audio_data, label_vocabulary,run_small_data=run_small_data)
+        self.audio_paths = audio_paths_list
+        self.labels = labels_list
         self.segments = []
-        for audiopath, label in zip(audio_paths, labels):
+        for audiopath, label in zip(audio_paths_list, labels_list):
             # Get the info of the audio file
             info = sf.info(audiopath)
             sr = info.samplerate
             len_y = info.frames
-            label = label.nonzero().flatten()
-            segments = [(i, i+sr, label) for i in range(0, len_y, sr)]
+            label = label
+            segments = [(i, i+sr, label, audiopath) for i in range(0, len_y, sr)]
 
             # Add the segments to the list
             self.segments.extend(segments)
@@ -75,19 +90,18 @@ class AudioDataset(Dataset):
 
     def __getitem__(self, index):
         # Load the audio data from the file
-        audio, sr = sf.read(self.audio_paths[index])
-        print("index is:",index)
-        i, i_plus_sr, label = self.segments[index]
+        i, i_plus_sr, label, audio_wav = self.segments[index]
+
+        audio, sr = sf.read(audio_wav)
+        #print("index is:",index)
+
         audio = audio[i:i_plus_sr]
         # Resample the audio data to a sample rate of 16000 Hz
-        audio = resampy.resample(audio, sr, 16000)
-        print(f"Resampled audio data shape: {audio.shape}")
-
+        audio = torch.from_numpy(audio)
         # If the audio data is less than 1 second, repeat it to make the duration 1 second
         if len(audio) < sr:
-            audio = np.tile(audio, int(16000 / len(audio)))
+            audio = torch.cat([audio, torch.zeros(sr - len(audio))])
         return audio, label
-
 
 
 def audio_collate_fn(batch):
@@ -100,33 +114,38 @@ def audio_collate_fn(batch):
 
 
 
-
+#deliver to main!!!!!!
 # Select a subset of the dataset to use
+# label_vocabulary_path = r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv'
+# train_path = './datafiles/fsd50k_tr_full.json'
+# eval_path = './datafiles/fsd50k_eval_full.json'
+# val_path = './datafiles/fsd50k_val_full.json'
+#
+# train_dataset = AudioDataset(train_path, label_vocabulary_path,run_small_data=True)
+# val_dataset = AudioDataset(eval_path, label_vocabulary_path,run_small_data=True)
+# eval_dataset = AudioDataset(val_path, label_vocabulary_path,run_small_data=True)
+#
+# # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
+# train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=audio_collate_fn)
+# val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=audio_collate_fn)
+# eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate_fn=audio_collate_fn)
+######delinver to main
 
-train_dataset = AudioDataset(audio_paths_train, labels_train)
-val_dataset = AudioDataset(audio_paths_val, labels_val)
-eval_dataset = AudioDataset(audio_paths_eval, labels_eval)
-
-# Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=audio_collate_fn)
-val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=audio_collate_fn)
-eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate_fn=audio_collate_fn)
 
 ### test the execution:
-num_samples = len(train_dataset)
-print(num_samples)
-train_dataloader = tqdm(train_dataloader, total=num_samples, desc="Processing audio data")
+# num_samples = len(train_dataset)
+# print(num_samples)
+# train_dataloader = tqdm(train_dataloader, total=num_samples, desc="Processing audio data")
 print("wii")
-'''
+
 # Example , Iterate through the dataloader to yield batches of data
-if __name__ == '__main__':
-    for audio_data, labels in train_dataloader:
-        #Train your model on the batch of data
-        pass
-        #print(f"Audio shape: {audio_data.shape}")
-        #print("labels")
-        #print("dataloader",train_dataloader)
-        #Audio(audio_data[25].numpy(), rate=16000)
-'''
-print("wiiiiiiii")
+
+# for audio_data, labels in train_dataloader:
+#     #Train your model on the batch of data
+#     pass
+#     #print(f"Audio shape: {audio_data.shape}")
+#     #print("labels")
+#     #print("dataloader",train_dataloader)
+#     #Audio(audio_data[25].numpy(), rate=16000)
+
 
