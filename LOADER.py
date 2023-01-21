@@ -9,11 +9,12 @@ from tqdm import tqdm
 import resampy
 import pandas as pd
 
-
 # Open the JSON file and read the contents
 ####### this is the input from the user... all other things : make_paths.. in the init
 with open('./Hirerachy.json', 'r') as f:
     eval_data = json.load(f)
+
+
 #### The JSONs are list of dictionaries... each one of the has path and label
 ##### this is delivered to the class , train val as parameter!!!!
 
@@ -30,17 +31,17 @@ with open('./Hirerachy.json', 'r') as f:
 # print(label_vocabulary.iloc[:,2])
 
 # extract paths and labels . labels as Multi-Hot vector
-#@ data: wavs and label encoding. see json's.
-#@ vocabulary: csv that maps label encoding to numerical value between 0-199
-#@ default flag for running on small_data
-def make_paths(data,vocabulary,run_small_data=False,num_small_samples=10):
-    one_hot_vec = torch.zeros(200,1)
+# @ data: wavs and label encoding. see json's.
+# @ vocabulary: csv that maps label encoding to numerical value between 0-199
+# @ default flag for running on small_data
+def make_paths(data, vocabulary, run_small_data=False, num_small_samples=10):
+    one_hot_vec = torch.zeros(200, 1)
     internal_dict = data['data']
-    audio_paths=[]
-    labels=[]
-    for cnt,path in enumerate(internal_dict):
-    # Access a value in the internal dictionary
-        if(cnt > num_small_samples and run_small_data):
+    audio_paths = []
+    labels = []
+    for cnt, path in enumerate(internal_dict):
+        # Access a value in the internal dictionary
+        if cnt > num_small_samples and run_small_data:
             break
         one_hot_vec = torch.zeros(200, 1)
         wav = (internal_dict[cnt]).get('wav')
@@ -50,7 +51,8 @@ def make_paths(data,vocabulary,run_small_data=False,num_small_samples=10):
         one_hot_vec[label_indices] = 1
         audio_paths.append(wav)
         labels.append(one_hot_vec)
-    return audio_paths,labels
+    return audio_paths, labels
+
 
 ######### this is delivered to __init__
 '''
@@ -60,17 +62,19 @@ audio_paths_train,labels_train = make_paths(train_data,label_vocabulary)
 audio_paths_val,labels_val = make_paths(val_data,label_vocabulary)
 '''
 
-#import torchaudio
 
-#dataset = torchaudio.datasets.LIBRISPEECH('./Dataset', 'train-clean-100', download=True)
+# import torchaudio
+
+# dataset = torchaudio.datasets.LIBRISPEECH('./Dataset', 'train-clean-100', download=True)
+
 
 class AudioDataset(Dataset):
-    def __init__(self,json_path,vacbulary_path,run_small_data=False):
+    def __init__(self, json_path, vacbulary_path, run_small_data=False):
         with open(json_path, 'r') as f:
             audio_data = json.load(f)
 
         label_vocabulary = pd.read_csv(vacbulary_path, header=None)
-        audio_paths_list, labels_list = make_paths(audio_data, label_vocabulary,run_small_data=run_small_data)
+        audio_paths_list, labels_list = make_paths(audio_data, label_vocabulary, run_small_data=run_small_data)
         self.audio_paths = audio_paths_list
         self.labels = labels_list
         self.segments = []
@@ -80,7 +84,7 @@ class AudioDataset(Dataset):
             sr = info.samplerate
             len_y = info.frames
             label = label
-            segments = [(i, i+sr, label, audiopath) for i in range(0, len_y, sr)]
+            segments = [(i, i + sr, label, audiopath) for i in range(0, len_y, sr)]
 
             # Add the segments to the list
             self.segments.extend(segments)
@@ -93,7 +97,8 @@ class AudioDataset(Dataset):
         i, i_plus_sr, label, audio_wav = self.segments[index]
 
         audio, sr = sf.read(audio_wav)
-        #print("index is:",index)
+        audio = audio.astype('float32')
+        # print("index is:",index)
 
         audio = audio[i:i_plus_sr]
         # Resample the audio data to a sample rate of 16000 Hz
@@ -113,8 +118,7 @@ def audio_collate_fn(batch):
     return audio_batch, labels
 
 
-
-#deliver to main!!!!!!
+# deliver to main!!!!!!
 # Select a subset of the dataset to use
 # label_vocabulary_path = r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv'
 # train_path = './datafiles/fsd50k_tr_full.json'
@@ -147,5 +151,3 @@ print("wii")
 #     #print("labels")
 #     #print("dataloader",train_dataloader)
 #     #Audio(audio_data[25].numpy(), rate=16000)
-
-

@@ -11,8 +11,8 @@ import soundfile as sf
 # please change it to your FSD50K dataset path
 # the data organization might change with versioning, the code is tested early 2021
 
-fsd_path = FSD50K_paths['code_exploring_eval']
-un_resampled_path = r'C:\FSD50K\FSD50K.dev_audio'
+fsd_path = FSD50K_paths['Resampled_eval']
+un_resampled_path = FSD50K_paths['Resampled_dev']
 
 # create json datafiles for training, validation, and evaluation set
 fsd_dev_csv = FSD50K_paths['ground_truth_dev']

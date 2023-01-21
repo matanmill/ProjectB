@@ -1,6 +1,7 @@
 from BaseArchitecture import BaseTransformer
 import torch
 from torch import nn
+from torch.utils.data import DataLoader
 import LOADER
 import time
 import torch.optim as opt
@@ -23,9 +24,9 @@ train_path = './datafiles/fsd50k_tr_full.json'
 eval_path = './datafiles/fsd50k_eval_full.json'
 val_path = './datafiles/fsd50k_val_full.json'
 
-train_dataset = LOADER.AudioDataset(train_path, label_vocabulary_path,run_small_data=True)
-val_dataset = LOADER.AudioDataset(eval_path, label_vocabulary_path,run_small_data=True)
-eval_dataset = LOADER.AudioDataset(val_path, label_vocabulary_path,run_small_data=True)
+train_dataset = LOADER.AudioDataset(train_path, label_vocabulary_path, run_small_data=True)
+val_dataset = LOADER.AudioDataset(eval_path, label_vocabulary_path, run_small_data=True)
+eval_dataset = LOADER.AudioDataset(val_path, label_vocabulary_path, run_small_data=True)
 
 # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
 train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=LOADER.audio_collate_fn)
@@ -37,7 +38,8 @@ eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate
 # part 2 - define the model and hyperparameters
 # all hyperparameters are already implemented inside the class
 
-saving_path = "model.pt"
+num_labels = 200  # change to parameter recieved, also you added it twice
+saving_path = r'C:\Users\matan\OneDrive\Desktop\technion\semester 8\Project B\outputs'  # add to parameters
 labels_size = 200  # 200 final categories
 base_model = BaseTransformer()
 save_best_model = SaveBestModel()
@@ -54,16 +56,17 @@ base_model.to(device)
 # will transport to a different module, this is here for comfortability for now
 
 criterion = nn.HuberLoss()
-lr = 5.0
+lr = 0.01
 optimizer = opt.Adam(base_model.parameters(), lr=lr)
 schedualer = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=0.95)
+metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thresholds=None)
 # can try to implement schedualer from attention is all you need
 
 # parameters for finding the best model and gathering statistics
 best_val_loss = float('inf')
 best_model = None
 epoch_num = 50
-total_batches = len(trainloader)
+total_batches = len(train_dataloader)
 start_time = time.time()
 
 train_loss, val_loss = [], []
@@ -73,11 +76,12 @@ val_acc = []
 for epoch in range(epoch_num):
     print(f"[INFO]: Epoch {epoch + 1} of {epoch_num}")
     # train phase
-    train_loss_epoch = train(model=base_model, dataloader_train=trainloader, criterion=criterion,
+    train_loss_epoch = train(model=base_model, dataloader_train=train_dataloader, criterion=criterion,
                              optimizer=optimizer, device=device)
 
     # evaluation phase
-    val_loss_epoch, val_epoch_acc = evaluate(base_model, validloader, criterion=criterion, device=device)
+    val_loss_epoch, val_epoch_acc = evaluate(base_model, val_dataloader, criterion=criterion,
+                                             device=device, metric=metric)
 
     # keep track of progress and save the best model
     print(f"Training loss: {train_loss_epoch:.3f}")
@@ -87,17 +91,18 @@ for epoch in range(epoch_num):
     val_loss.append(val_loss_epoch)
     val_acc.append(val_epoch_acc)
 
-    save_best_model(val_loss_epoch, epoch, base_model, optimizer, criterion)
+    save_best_model(val_loss_epoch, epoch, base_model, optimizer, criterion, path=saving_path)
 
 # save the trained model weights for a final time
-save_model(epoch_num, base_model, optimizer, criterion)
+save_model(epoch_num, base_model, optimizer, criterion, path=saving_path)
 
 # save the loss and accuracy plots
-save_plots(val_acc, train_loss, val_loss)
+save_plots(val_acc, train_loss, val_loss, path=saving_path)
 
 print('TRAINING COMPLETE')
 ###########################################################################
 # part 4 - test
 
-Final_Accuracy = test(model=base_model, dataloader_test=testloader, criterion=criterion, device=device)
+Final_Accuracy = test(model=base_model, dataloader_test=eval_dataloader, criterion=criterion,
+                      device=device, metric=metric)
 print("Final accuracy for the model, based on mAP metric is " + str(Final_Accuracy))

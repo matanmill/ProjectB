@@ -14,6 +14,7 @@ class FrontEnd(nn.Module):
         self.fc2 = nn.Linear(in_features=latent_dim, out_features=output_dim)
 
         self.init_weights()
+        #print(self.fc1.weight.dtype)
 
         # Information
         self.feed_forward_param_num = inputdim * output_dim * latent_dim
@@ -26,6 +27,7 @@ class FrontEnd(nn.Module):
         self.fc2.bias.data.zero_()
 
     def forward(self, x):
+        #print(x.dtype)
         x = self.fc1(x)
         x = func.relu(self.fc2(x))
         return x
@@ -47,9 +49,9 @@ def transformer_block(dim_model, num_head, dim_feedforward, dropout,
                                                dim_feedforward=dim_feedforward,
                                                dropout=dropout,
                                                batch_first=True,
-                                               norm_first=True),
+                                               norm_first=True)
     sequence = nn.Sequential(
-        nn.TransformerEncoder(encoder_layer, num_layers=num_encode_layers),
+        nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=num_encode_layers),
         nn.Linear(in_features=dim_model, out_features=dense_dim),
         nn.ReLU(),
         nn.Linear(in_features=dense_dim, out_features=dense_dim),

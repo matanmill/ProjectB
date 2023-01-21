@@ -1,7 +1,13 @@
 import torch
 import matplotlib.pyplot as plt
+import os
+import time
 
+## You need to add all paths here to parameters recieved
+## You need to add all paths here to parameters recieved
+## You need to add all paths here to parameters recieved
 plt.style.use('ggplot')
+time = time.time()
 
 
 class SaveBestModel:
@@ -18,7 +24,7 @@ class SaveBestModel:
 
     def __call__(
             self, current_valid_loss,
-            epoch, model, optimizer, criterion
+            epoch, model, optimizer, criterion, path
     ):
         if current_valid_loss < self.best_valid_loss:
             self.best_valid_loss = current_valid_loss
@@ -29,23 +35,24 @@ class SaveBestModel:
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-            }, 'outputs/best_model.pth')
+            }, os.path.join(path, 'model.pt'))
 
 
-def save_model(epochs, model, optimizer, criterion):
+def save_model(epochs, model, optimizer, criterion, path):
     """
     Function to save the trained model to disk.
     """
     print(f"Saving final model...")
+    path = os.path.join(path, 'model.pt')
     torch.save({
                 'epoch': epochs,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-                }, 'outputs/final_model.pth')
+                }, path)
 
 
-def save_plots(valid_acc, train_loss, valid_loss):
+def save_plots(valid_acc, train_loss, valid_loss,path):
     """
     Function to save the loss and accuracy plots to disk.
     """
@@ -58,7 +65,7 @@ def save_plots(valid_acc, train_loss, valid_loss):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig('outputs/accuracy.png')
+    plt.savefig(os.path.join(path, 'accuracy,png'))
 
     # loss plots
     plt.figure(figsize=(10, 7))
@@ -73,4 +80,5 @@ def save_plots(valid_acc, train_loss, valid_loss):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('outputs/loss.png')
+    plt.savefig(os.path.join(path, 'loss,png'))
+
