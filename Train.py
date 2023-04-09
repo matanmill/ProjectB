@@ -8,11 +8,13 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
 
     for index, (data, labels) in enumerate(dataloader_train):
         # send data and labels to device
-        data = torch.reshape(data, (-1, 40, 400))
+        print("old", type(labels))
+        #data = torch.reshape(data, (-1, 40, 400))
         data = data.to(device)
-        labels = torch.cat(labels, dim=1)
-        labels = torch.transpose(labels, 0, 1)
-        print(labels.size())
+        #labels = torch.cat(labels, dim=1)
+        #labels = torch.transpose(labels, 0, 1)
+        print("new type:", type(labels))
+        print("data is:", data.size())
         labels = labels.to(device)
 
         # compute loss by criteria
@@ -40,10 +42,10 @@ def evaluate(model: nn.Module, dataloader_eval, criterion, device, metric):
         accuracy = 0
         for index, (data, labels) in enumerate(dataloader_eval):
             # send data and labels to device
-            data = torch.reshape(data, (-1, 40, 400))
+            #data = torch.reshape(data, (-1, 40, 400))
             data = data.to(device)
-            labels = torch.cat(labels, dim=1)
-            labels = torch.transpose(labels, 0, 1)
+            #labels = torch.cat(labels, dim=1)
+            #labels = torch.transpose(labels, 0, 1)
             labels = labels.to(device)
             labels_size = len(labels)
             output = model(data)
@@ -64,10 +66,10 @@ def test(model, dataloader_test, criterion, device, metric):
     batch_num = len(dataloader_test)
     for index, (data, labels) in enumerate(dataloader_test):
         # send data and labels to device, compute mAP for this batch
-        data = torch.reshape(data, (-1, 40, 400))
+        #data = torch.reshape(data, (-1, 40, 400))
         data = data.to(device)
-        labels = torch.cat(labels, dim=1)
-        labels = torch.transpose(labels, 0, 1)
+        #labels = torch.cat(labels, dim=1)
+        #labels = torch.transpose(labels, 0, 1)
         labels = labels.to(device)
         predictions = model(data)
         predictions = torch.squeeze(predictions, dim=1)

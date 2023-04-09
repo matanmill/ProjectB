@@ -51,6 +51,7 @@ def make_paths(data, vocabulary, run_small_data=False, num_small_samples=10):
         one_hot_vec[label_indices] = 1
         audio_paths.append(wav)
         labels.append(one_hot_vec)
+    print(type(labels))
     return audio_paths, labels
 
 
@@ -75,6 +76,7 @@ class AudioDataset(Dataset):
 
         label_vocabulary = pd.read_csv(vacbulary_path, header=None)
         audio_paths_list, labels_list = make_paths(audio_data, label_vocabulary, run_small_data=run_small_data)
+
         self.audio_paths = audio_paths_list
         self.labels = labels_list
         self.segments = []
@@ -113,13 +115,18 @@ def audio_collate_fn(batch):
     # Get the audio samples and labels from the batch
     audio_samples = [item[0] for item in batch]
     labels = [item[1] for item in batch]
+    labels = torch.cat(labels, dim=1)
+    labels = torch.transpose(labels, 0, 1)
     # Stack the audio samples along the first dimension to form a mini-batch
     audio_batch = torch.stack(audio_samples, dim=0)
+    # Creating the 40X400 input matrix
+    audio_batch = torch.reshape(audio_batch, (-1, 40, 400))
+    #print("what", audio_batch.size())
     return audio_batch, labels
 
 
-# deliver to main!!!!!!
-# Select a subset of the dataset to use
+#deliver to main!!!!!!
+#Select a subset of the dataset to use
 # label_vocabulary_path = r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv'
 # train_path = './datafiles/fsd50k_tr_full.json'
 # eval_path = './datafiles/fsd50k_eval_full.json'
@@ -133,21 +140,21 @@ def audio_collate_fn(batch):
 # train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=audio_collate_fn)
 # val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=audio_collate_fn)
 # eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate_fn=audio_collate_fn)
-######delinver to main
-
-
-### test the execution:
+# #####delinver to main
+#
+#
+# ## test the execution:
 # num_samples = len(train_dataset)
 # print(num_samples)
 # train_dataloader = tqdm(train_dataloader, total=num_samples, desc="Processing audio data")
-print("wii")
-
-# Example , Iterate through the dataloader to yield batches of data
-
+# print("wii")
+# #Example , Iterate through the dataloader to yield batches of data
+#
 # for audio_data, labels in train_dataloader:
 #     #Train your model on the batch of data
 #     pass
-#     #print(f"Audio shape: {audio_data.shape}")
-#     #print("labels")
+#
+#     print(f"Audio shape: {labels.size()}")
+#     #print(labels.size())
 #     #print("dataloader",train_dataloader)
 #     #Audio(audio_data[25].numpy(), rate=16000)
