@@ -8,6 +8,26 @@ import torch.optim as opt
 from Train import train, evaluate, test
 from utils import SaveBestModel, save_plots, save_model
 from torchmetrics.classification import MultilabelAveragePrecision
+import argparse
+
+#########################################################################
+# parsing arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
+parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
+parser.add_argument('--learning_rate', default=0.01, type=float, metavar='LR', help='initial learning rate')
+parser.add_argument("--epochs", type=int, default=50, help="number of maximum training epochs")
+parser.add_argument("--saving_path", type=str, default=r'C:\Users\matan\OneDrive\Desktop\technion\semester 8\Project B\outputs',
+                    help="path for saving results")
+parser.add_argument("--label_vocabulary_path", type=str, default=r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',
+                    help="path for decoding the labels from provided vocabulary")
+parser.add_argument("--train_path", type=str, default='./datafiles/fsd50k_tr_full.json',
+                    help="path for training set")
+parser.add_argument("--eval_path", type=str, default='./datafiles/fsd50k_eval_full.json',
+                    help="path for test set")
+parser.add_argument("--val_path", type=str, default='./datafiles/fsd50k_val_full.json',
+                    help="path for validation set")
+args = parser.parse_args()
 
 
 ###########################################################################
@@ -19,27 +39,28 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # validloader = LOADER.val_dataloader
 # testloader = LOADER.eval_dataloader
 
-label_vocabulary_path = r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv'
-train_path = './datafiles/fsd50k_tr_full.json'
-eval_path = './datafiles/fsd50k_eval_full.json'
-val_path = './datafiles/fsd50k_val_full.json'
+label_vocabulary_path = args.label_vocabulary_path
+train_path = args.train_path
+eval_path = args.eval_path
+val_path = args.val_path
 
-train_dataset = LOADER.AudioDataset(train_path, label_vocabulary_path, run_small_data=True)
-val_dataset = LOADER.AudioDataset(eval_path, label_vocabulary_path, run_small_data=True)
-eval_dataset = LOADER.AudioDataset(val_path, label_vocabulary_path, run_small_data=True)
+train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=True)
+val_dataset = LOADER.AudioDataset(eval_path, args.num_labels, label_vocabulary_path, run_small_data=True)
+eval_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 
 # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
-train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True, collate_fn=LOADER.audio_collate_fn)
-val_dataloader = DataLoader(val_dataset, batch_size=32, shuffle=False, collate_fn=LOADER.audio_collate_fn)
-eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate_fn=LOADER.audio_collate_fn)
+train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=LOADER.audio_collate_fn)
+val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=LOADER.audio_collate_fn)
+eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=LOADER.audio_collate_fn)
 
 
 ###########################################################################
 # part 2 - define the model and hyperparameters
 # all hyperparameters are already implemented inside the class
 
-num_labels = 200  # change to parameter recieved, also you added it twice
-saving_path = r'C:\Users\matan\OneDrive\Desktop\technion\semester 8\Project B\outputs'  # add to parameters
+num_labels = args.num_labels  # change to parameter recieved, also you added it twice
+saving_path = args.saving_path  # add to parameters
+labels_size = 200  # 200 final categories
 base_model = BaseTransformer()
 save_best_model = SaveBestModel()
 
@@ -55,8 +76,8 @@ base_model.to(device)
 # will transport to a different module, this is here for comfortability for now
 
 criterion = nn.HuberLoss()
-lr = 0.01
-optimizer = opt.Adam(base_model.parameters(), lr=lr)
+#lr = 0.01
+optimizer = opt.Adam(base_model.parameters(), lr=args.learning_rate)
 schedualer = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=0.95)
 metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thresholds=None)
 # can try to implement schedualer from attention is all you need
@@ -64,7 +85,7 @@ metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thre
 # parameters for finding the best model and gathering statistics
 best_val_loss = float('inf')
 best_model = None
-epoch_num = 50
+epoch_num = args.epochs
 total_batches = len(train_dataloader)
 start_time = time.time()
 
