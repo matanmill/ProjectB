@@ -52,7 +52,7 @@ def save_model(epochs, model, optimizer, criterion, path):
                 }, path)
 
 
-def save_plots(valid_acc, train_loss, valid_loss,path):
+def save_plots(valid_acc, train_loss, valid_loss, path):
     """
     Function to save the loss and accuracy plots to disk.
     """
@@ -65,7 +65,7 @@ def save_plots(valid_acc, train_loss, valid_loss,path):
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig(os.path.join(path, 'accuracy,png'))
+    plt.savefig(os.path.join(path, 'accuracy.png'))
 
     # loss plots
     plt.figure(figsize=(10, 7))
@@ -80,5 +80,5 @@ def save_plots(valid_acc, train_loss, valid_loss,path):
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig(os.path.join(path, 'loss,png'))
+    plt.savefig(os.path.join(path, 'loss.png'))
 

@@ -3,9 +3,6 @@ import torch
 import math
 import torch.nn as nn
 import torch.nn.functional as func
-import librosa.feature as feat
-import librosa.effects as effects
-import numpy as np
 
 
 # class for Front-End + Patches
@@ -17,7 +14,7 @@ class FrontEnd(nn.Module):
         self.fc2 = nn.Linear(in_features=latent_dim, out_features=output_dim)
 
         self.init_weights()
-        # print(self.fc1.weight.dtype)
+        #print(self.fc1.weight.dtype)
 
         # Information
         self.feed_forward_param_num = inputdim * output_dim * latent_dim
@@ -30,7 +27,7 @@ class FrontEnd(nn.Module):
         self.fc2.bias.data.zero_()
 
     def forward(self, x):
-        # print(x.dtype)
+        #print(x.dtype)
         x = self.fc1(x)
         x = func.relu(self.fc2(x))
         return x
@@ -172,69 +169,3 @@ class PositionalEncoding(nn.Module):
         """
         x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
-
-
-def pre_emp(y):
-    y_emp = effects.preemphasis(y)
-    return y_emp
-
-
-# noinspection PyUnboundLocalVariable
-class ClassicalFeatures:
-
-    # should this actually be implemented as a class for now?
-    # there's something not right with my implementation
-
-    def __init__(self, sr=16000, extract_mfcc=True, extract_stft=True,
-                 extract_delta=True, extract_second_delta=True,
-                 pre_emphasis=True, window_size=25, window_type="hamming"):  # what inside here?
-        self.sr = sr
-        self.extract_mfcc = extract_mfcc
-        self.extract_stft = extract_stft
-        self.extract_delta = extract_delta | self.extract_mfcc
-        self.extract_second_delta = extract_second_delta | self.extract_mfcc
-        self.pre_emphasis = pre_emphasis
-        self.window_size = self.sr / window_size
-        self.window_type = window_type
-        self.num_coeff = self.num_features(model_dim=64)
-
-    def normalize(self, mat):
-        """
-        need to understand function for normlalizing
-        :return:
-        """
-
-    def num_features(self, model_dim=64):
-        num_of_feature_types = sum([getattr(self, f"extract_{feature_type}") for feature_type in
-                                    ["mfcc", "stft", "delta", "second_delta"]])
-        return math.floor(model_dim/num_of_feature_types)
-
-    def calculate_feature_matrix(self, y):
-        features = []
-        if self.pre_emphasis:
-            y = pre_emp(y)
-
-        if self.extract_mfcc:
-            mfcc_feat = feat.mfcc(y=y, sr=self.sr, win_length=self.window_size,
-                                  n_mfcc=self.num_coeff, window=self.window_type)
-            features.append(mfcc_feat)
-
-        if self.extract_delta:
-            mfcc_delta_feat = feat.delta(mfcc_feat)
-            features.append(mfcc_feat)
-
-        if self.extract_second_delta:
-            mfcc_delta_2_feat = feat.delta(mfcc_delta_feat)
-            features.append(mfcc_delta_2_feat)
-
-        if self.extract_stft:
-            stft_feat = feat.chroma_stft(y=y, sr=self.sr, win_length=self.window_size,
-                                         window=self.window_type, n_chroma=self.num_coeff)
-            features.append(mfcc_delta_2_feat)
-
-        features_tensor = torch.tensor(np.concatenate(features, axis=0))
-        # TODO: check dimensionality, add normalizing, add features
-        return features_tensor
-
-
-

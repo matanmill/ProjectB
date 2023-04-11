@@ -40,7 +40,6 @@ eval_dataloader = DataLoader(eval_dataset, batch_size=32, shuffle=False, collate
 
 num_labels = 200  # change to parameter recieved, also you added it twice
 saving_path = r'C:\Users\matan\OneDrive\Desktop\technion\semester 8\Project B\outputs'  # add to parameters
-labels_size = 200  # 200 final categories
 base_model = BaseTransformer()
 save_best_model = SaveBestModel()
 
