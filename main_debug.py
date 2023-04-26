@@ -8,6 +8,7 @@ import torch.optim as opt
 from Train import train, evaluate, test
 from utils import SaveBestModel, save_plots, save_model
 from torchmetrics.classification import MultilabelAveragePrecision
+from torch.utils.data import WeightedRandomSampler
 import argparse
 
 #########################################################################
@@ -16,6 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
 parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
 parser.add_argument('--learning_rate', default=0.01, type=float, metavar='LR', help='initial learning rate')
+parser.add_argument('--dropout', default=0.1, type=float, help='dropout')
 parser.add_argument("--epochs", type=int, default=50, help="number of maximum training epochs")
 parser.add_argument("--saving_path", type=str, default=r'C:\Users\matan\OneDrive\Desktop\technion\semester 8\Project B\outputs',
                     help="path for saving results")
@@ -27,7 +29,14 @@ parser.add_argument("--eval_path", type=str, default='./datafiles/fsd50k_eval_fu
                     help="path for test set")
 parser.add_argument("--val_path", type=str, default='./datafiles/fsd50k_val_full.json',
                     help="path for validation set")
+parser.add_argument('--balanced_set', help='if use balance sampling', type=str)
 args = parser.parse_args()
+# Save the arguments
+torch.save(args, 'model_args.pt')
+
+#for summary of your requested parameters, uncomment this or see model_args.pt
+# args_user = torch.load('model_args.pt')
+# print("our args",args_user)
 
 
 ###########################################################################
@@ -44,12 +53,24 @@ train_path = args.train_path
 eval_path = args.eval_path
 val_path = args.val_path
 
+# Set the seed
+seed = 42
+torch.manual_seed(seed)
+
 train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 val_dataset = LOADER.AudioDataset(eval_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 eval_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 
+if args.balanced_set == True:
+    print('balanced sampler is being used')
+    samples_weight = np.loadtxt(args.data_train[:-5] + '_weight.csv', delimiter=',')
+    sampler = WeightedRandomSampler(samples_weight, len(samples_weight), replacement=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                                  collate_fn=LOADER.audio_collate_fn, sampler=sampler)
+else:
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                                  collate_fn=LOADER.audio_collate_fn)
 # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
-train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, collate_fn=LOADER.audio_collate_fn)
 val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=LOADER.audio_collate_fn)
 eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=LOADER.audio_collate_fn)
 
@@ -61,7 +82,7 @@ eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=F
 num_labels = args.num_labels  # change to parameter recieved, also you added it twice
 saving_path = args.saving_path  # add to parameters
 labels_size = 200  # 200 final categories
-base_model = BaseTransformer()
+base_model = BaseTransformer(dropout=args.dropout)
 save_best_model = SaveBestModel()
 
 # split the training between all GPU's available
