@@ -61,10 +61,10 @@ def test(model, dataloader_test, criterion, device, metric):
     batch_num = len(dataloader_test)
     for index, (data, labels) in enumerate(dataloader_test):
         # send data and labels to device, compute mAP for this batch
-        #data = torch.reshape(data, (-1, 40, 400))
+        # data = torch.reshape(data, (-1, 40, 400))
         data = data.to(device)
-        #labels = torch.cat(labels, dim=1)
-        #labels = torch.transpose(labels, 0, 1)
+        # labels = torch.cat(labels, dim=1)
+        # labels = torch.transpose(labels, 0, 1)
         labels = labels.to(device)
         predictions = model(data)
         predictions = torch.squeeze(predictions, dim=1)

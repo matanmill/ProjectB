@@ -11,6 +11,8 @@ from torchmetrics.classification import MultilabelAveragePrecision
 import argparse
 
 #########################################################################
+###           Don't run here - use normal main function               ###
+#########################################################################
 # parsing arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
@@ -59,7 +61,7 @@ eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=F
 # all hyperparameters are already implemented inside the class
 
 num_labels = args.num_labels  # change to parameter recieved, also you added it twice
-saving_path = args.saving_path  # add to parameters
+saving_path = os.path.join(args.saving_path, time.strftime("%Y%m%d-%H%M%S")) # add to parameters
 labels_size = 200  # 200 final categories
 base_model = BaseTransformer()
 save_best_model = SaveBestModel()
@@ -112,9 +114,10 @@ for epoch in range(epoch_num):
     val_acc.append(val_epoch_acc)
 
     save_best_model(val_loss_epoch, epoch, base_model, optimizer, criterion, path=saving_path)
+    metric.reset()
 
-# save the trained model weights for a final time
-save_model(epoch_num, base_model, optimizer, criterion, path=saving_path)
+# save the trained model weights for a final time - don't need to save at the end
+# save_model(epoch_num, base_model, optimizer, criterion, path=saving_path)
 
 # save the loss and accuracy plots
 save_plots(val_acc, train_loss, val_loss, path=saving_path)
