@@ -8,7 +8,7 @@ import spafe.features.gfcc as gfcc
 
 y, sr = soundfile.read(r'C:\FSD50K\Resampled_dev\699.wav')
 if len(y) < 16000:
-    y = np.concatenate([y, np.zeros(sr - len(y))])
+    y = np.concatenate([y, np.zeros(sr - len(y))]).shape()
 y = y[:sr-1]
 print(y)
 
