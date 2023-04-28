@@ -9,6 +9,7 @@ from Train import train, evaluate, test
 from utils import SaveBestModel, save_plots, save_model
 from torchmetrics.classification import MultilabelAveragePrecision
 import argparse
+import os
 
 #########################################################################
 # parsing arguments
@@ -27,6 +28,9 @@ parser.add_argument("--eval_path", type=str, default='./datafiles/fsd50k_eval_fu
                     help="path for test set")
 parser.add_argument("--val_path", type=str, default='./datafiles/fsd50k_val_full.json',
                     help="path for validation set")
+parser.add_argument("--mAP_epsilon", type=int, default=0.01, help=" epsilon for stopping condition based on mAP")
+parser.add_argument("--epoch_plateua", type=int, default=5, help="after <num> epochs without change according to stopping"
+                                                               "criteria we want to stop training")
 args = parser.parse_args()
 
 
@@ -59,7 +63,7 @@ eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=F
 # all hyperparameters are already implemented inside the class
 
 num_labels = args.num_labels  # change to parameter recieved, also you added it twice
-saving_path = os.path.join(args.saving_path, time.strftime("%Y%m%d-%H%M%S")) # add to parameters
+saving_path = os.path.join(args.saving_path, time.strftime("%Y%m%d-%H%M%S"))  # add to parameters
 labels_size = 200  # 200 final categories
 base_model = BaseTransformer()
 save_best_model = SaveBestModel()
@@ -88,8 +92,10 @@ epoch_num = args.epochs
 total_batches = len(train_dataloader)
 start_time = time.time()
 
-train_loss, val_loss = [], []
+train_loss = []
+val_loss = []
 val_acc = []
+no_improvement_counter = 0
 
 # training process over epochs
 for epoch in range(epoch_num):
@@ -110,8 +116,18 @@ for epoch in range(epoch_num):
     val_loss.append(val_loss_epoch)
     val_acc.append(val_epoch_acc)
 
-    save_best_model(val_loss_epoch, epoch, base_model, optimizer, criterion, path=saving_path)
-    metric.reset()
+    best_mAP, best_val_loss = save_best_model(current_val_loss=val_loss_epoch, current_map_score=val_epoch_acc,
+                                              epoch=epoch, model=base_model, optimizer=optimizer, criterion=criterion,
+                                              path=saving_path)
+
+    if epoch > 5:
+        if val_acc[-1] - val_acc[-2] < args.mAP_epsilon:
+            no_improvement_counter += 1
+        else:
+            no_improvement_counter = 0
+        if no_improvement_counter == args.epoch_plateua:
+            print("Stopping training phase, mAP score doesn't improve")
+            break
 
 # save the trained model weights for a final time - don't need to save at the end
 # save_model(epoch_num, base_model, optimizer, criterion, path=saving_path)

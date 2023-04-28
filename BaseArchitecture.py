@@ -235,6 +235,3 @@ class ClassicalFeatures:
         features_tensor = torch.tensor(np.concatenate(features, axis=0))
         # TODO: check dimensionality, add normalizing, add features
         return features_tensor
-
-
-

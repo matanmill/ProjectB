@@ -21,13 +21,13 @@ class SaveBestModel:
         self.best_map = best_map
         self.method = method
 
-
     def __call__(
-            self, current_score,
+            self, current_val_loss, current_map_score,
             epoch, model, optimizer, criterion, path
     ):
         """
-        :param current_score: could be validation loss or map score
+        :param current_val_loss: validation loss for current epoch
+        :param current_val_loss: mAP for current epoch
         :param epoch: epoch number
         :param model: trined model
         :param optimizer: optimizer
@@ -41,8 +41,8 @@ class SaveBestModel:
             os.makedirs(path)
 
         # if decided on validation method of saving stuff:
-        if self.method == "validation" and current_score < self.best_valid_loss:
-            self.best_valid_loss = current_score
+        if self.method == "validation" and current_val_loss < self.best_valid_loss:
+            self.best_valid_loss = current_val_loss
             print(f"\nBest validation loss: {self.best_valid_loss}")
             print(f"\nSaving best model for epoch: {epoch + 1}\n")
             torch.save({
@@ -52,9 +52,9 @@ class SaveBestModel:
                 'loss': criterion,
             }, os.path.join(path, 'model.pt'))  # add epoch num
 
-        if self.method == "map" and current_score > self.best_map:
-            self.best_map = current_score
-            print(f"\nBest validation loss: {self.best_valid_loss}")
+        if self.method == "map" and current_map_score > self.best_map:
+            self.best_map = current_map_score
+            print(f"\nBest mAP score: {self.best_map}")
             print(f"\nSaving best model for epoch: {epoch + 1}\n")
             torch.save({
                 'epoch': epoch + 1,
@@ -63,6 +63,7 @@ class SaveBestModel:
                 'loss': criterion,
             }, os.path.join(path, 'model.pt'))  # add epoch num
 
+        return self.best_map, self.best_valid_loss
 
 def save_model(epochs, model, optimizer, criterion, path):
     """
