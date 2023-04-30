@@ -31,11 +31,10 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
 
 def evaluate(model: nn.Module, dataloader_eval, criterion, device, metric):
     model.eval()
-    num_bathces = len(dataloader_eval)
+    total_loss = 0
     with torch.no_grad():  # don't keep track of gradients (faster)
-        total_loss = 0
-        accuracy = 0
         for index, (data, labels) in enumerate(dataloader_eval):
+
             # send data and labels to device
             data = data.to(device)
             labels = labels.to(device)
@@ -54,6 +53,25 @@ def evaluate(model: nn.Module, dataloader_eval, criterion, device, metric):
         return total_loss, score
 
 
+def test(model, dataloader_test, device, metric):
+    model.eval()
+    with torch.no_grad():
+        for index, (data, labels) in enumerate(dataloader_test):
+
+            # send data and labels to device, compute mAP for this batch
+            data = data.to(device)
+            labels = labels.to(device)
+            labels = labels.to(torch.long)
+            predictions = model(data)
+            predictions = torch.squeeze(predictions, dim=1)
+            metric(predictions, labels)
+            # predictions = predictions.detach()
+
+        score = metric.compute()
+        metric.reset()
+        return score
+
+"""
 def test(model, dataloader_test, criterion, device, metric):
     score = 0
     batch_num = len(dataloader_test)
@@ -61,6 +79,7 @@ def test(model, dataloader_test, criterion, device, metric):
         # send data and labels to device, compute mAP for this batch
         data = data.to(device)
         labels = labels.to(device)
+        labels = labels.to(torch.long)
         predictions = model(data)
         predictions = torch.squeeze(predictions, dim=1)
         metric(predictions, labels)
@@ -68,6 +87,6 @@ def test(model, dataloader_test, criterion, device, metric):
     score = metric.compute()
     metric.reset()
     return score
-
+"""
 
 

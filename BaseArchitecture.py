@@ -173,6 +173,7 @@ class PositionalEncoding(nn.Module):
         x = x + self.pe[:, :x.size(1)]
         return self.dropout(x)
 
+"""
 
 def pre_emp(y):
     y_emp = effects.preemphasis(y)
@@ -199,10 +200,10 @@ class ClassicalFeatures:
         self.num_coeff = self.num_features(model_dim=64)
 
     def normalize(self, mat):
-        """
+        
         need to understand function for normlalizing
         :return:
-        """
+        
 
     def num_features(self, model_dim=64):
         num_of_feature_types = sum([getattr(self, f"extract_{feature_type}") for feature_type in
@@ -235,3 +236,5 @@ class ClassicalFeatures:
         features_tensor = torch.tensor(np.concatenate(features, axis=0))
         # TODO: check dimensionality, add normalizing, add features
         return features_tensor
+        
+"""

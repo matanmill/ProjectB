@@ -7,6 +7,7 @@ plt.style.use('ggplot')
 time = time.time()
 
 
+# TODO: add parser arguments inside the saving function
 class SaveBestModel:
     """
     Class to save the best model while training. If the current epoch's
@@ -23,7 +24,7 @@ class SaveBestModel:
 
     def __call__(
             self, current_val_loss, current_map_score,
-            epoch, model, optimizer, criterion, path
+            epoch, model, optimizer, criterion, path, args
     ):
         """
         :param current_val_loss: validation loss for current epoch
@@ -50,7 +51,8 @@ class SaveBestModel:
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-            }, os.path.join(path, 'model.pt'))  # add epoch num
+                'hyper_parameters': args
+            }, os.path.join(path, 'model.pth'))  # add epoch num
 
         if self.method == "map" and current_map_score > self.best_map:
             self.best_map = current_map_score
@@ -61,9 +63,11 @@ class SaveBestModel:
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
                 'loss': criterion,
-            }, os.path.join(path, 'model.pt'))  # add epoch num
+                'hyper_parameters': args
+            }, os.path.join(path, 'model.pth'))  # add epoch num
 
         return self.best_map, self.best_valid_loss
+
 
 def save_model(epochs, model, optimizer, criterion, path):
     """
@@ -72,7 +76,7 @@ def save_model(epochs, model, optimizer, criterion, path):
     print(f"Saving final model...")
     if not os.path.exists(path):
         os.makedirs(path)
-    path = os.path.join(path, 'model.pt')
+    path = os.path.join(path, 'model.pth')
     torch.save({
                 'epoch': epochs,
                 'model_state_dict': model.state_dict(),
