@@ -8,10 +8,10 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
 
     for index, (data, labels) in enumerate(dataloader_train):
         # send data and labels to device
-        data = torch.reshape(data, (-1, 40, 400))
+        # data = torch.reshape(data, (-1, 40, 400))
         data = data.to(device)
-        labels = torch.cat(labels, dim=1)
-        labels = torch.transpose(labels, 0, 1)
+        # labels = torch.cat(labels, dim=1)
+        # labels = torch.transpose(labels, 0, 1)
         labels = labels.to(device)
 
         # compute loss by criteria
@@ -31,16 +31,12 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
 
 def evaluate(model: nn.Module, dataloader_eval, criterion, device, metric):
     model.eval()
-    num_bathces = len(dataloader_eval)
+    total_loss = 0
     with torch.no_grad():  # don't keep track of gradients (faster)
-        total_loss = 0
-        accuracy = 0
         for index, (data, labels) in enumerate(dataloader_eval):
+
             # send data and labels to device
-            data = torch.reshape(data, (-1, 40, 400))
             data = data.to(device)
-            labels = torch.cat(labels, dim=1)
-            labels = torch.transpose(labels, 0, 1)
             labels = labels.to(device)
             labels = labels.to(torch.long)
             output = model(data)
@@ -49,30 +45,48 @@ def evaluate(model: nn.Module, dataloader_eval, criterion, device, metric):
             # compute validation loss for model selection
             loss = criterion(output, labels)
             total_loss += loss.item()
-            accuracy += metric(output, labels)
+            metric(output, labels)
 
-        accuracy = accuracy/num_bathces
+        score = metric.compute()
+        metric.reset()
 
-        return total_loss, accuracy
+        return total_loss, score
 
 
+def test(model, dataloader_test, device, metric):
+    model.eval()
+    with torch.no_grad():
+        for index, (data, labels) in enumerate(dataloader_test):
+
+            # send data and labels to device, compute mAP for this batch
+            data = data.to(device)
+            labels = labels.to(device)
+            labels = labels.to(torch.long)
+            predictions = model(data)
+            predictions = torch.squeeze(predictions, dim=1)
+            metric(predictions, labels)
+            # predictions = predictions.detach()
+
+        score = metric.compute()
+        metric.reset()
+        return score
+
+"""
 def test(model, dataloader_test, criterion, device, metric):
     score = 0
     batch_num = len(dataloader_test)
     for index, (data, labels) in enumerate(dataloader_test):
         # send data and labels to device, compute mAP for this batch
-        # data = torch.reshape(data, (-1, 40, 400))
         data = data.to(device)
-        # labels = torch.cat(labels, dim=1)
-        # labels = torch.transpose(labels, 0, 1)
         labels = labels.to(device)
+        labels = labels.to(torch.long)
         predictions = model(data)
         predictions = torch.squeeze(predictions, dim=1)
-        score += metric(predictions, labels)
+        metric(predictions, labels)
 
-    # total score/ number of batches
-    score = score/batch_num
+    score = metric.compute()
+    metric.reset()
     return score
-
+"""
 
 

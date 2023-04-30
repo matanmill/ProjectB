@@ -31,12 +31,13 @@ parser.add_argument("--eval_path", type=str, default='./datafiles/fsd50k_eval_fu
                     help="path for test set")
 parser.add_argument("--val_path", type=str, default='./datafiles/fsd50k_val_full.json',
                     help="path for validation set")
-parser.add_argument('--balanced_set', help='if use balance sampling', type=str)
+parser.add_argument('--balanced_set', default=False, help='if use balance sampling', type=str)
 args = parser.parse_args()
-# Save the arguments
-torch.save(args, 'model_args.pt')
 
-#for summary of your requested parameters, uncomment this or see model_args.pt
+# Save the arguments
+torch.save(args, 'model_args.pt') # where does it save stuff?
+
+# for summary of your requested parameters, uncomment this or see model_args.pt
 # args_user = torch.load('model_args.pt')
 # print("our args",args_user)
 
@@ -55,15 +56,14 @@ train_path = args.train_path
 eval_path = args.eval_path
 val_path = args.val_path
 
-# Set the seed
-seed = 42
-torch.manual_seed(seed)
+# Set the seed - add it to the args
+torch.manual_seed(args.seed)
 
 train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 val_dataset = LOADER.AudioDataset(eval_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 eval_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=True)
 
-if args.balanced_set == True:
+if args.balanced_set:
     print('balanced sampler is being used')
     samples_weight = np.loadtxt(args.data_train[:-5] + '_weight.csv', delimiter=',')
     sampler = WeightedRandomSampler(samples_weight, len(samples_weight), replacement=True)
@@ -72,6 +72,7 @@ if args.balanced_set == True:
 else:
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
                                   collate_fn=LOADER.audio_collate_fn)
+
 # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
 val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=LOADER.audio_collate_fn)
 eval_dataloader = DataLoader(eval_dataset, batch_size=args.batch_size, shuffle=False, collate_fn=LOADER.audio_collate_fn)
@@ -99,7 +100,6 @@ base_model.to(device)
 # will transport to a different module, this is here for comfortability for now
 
 criterion = nn.HuberLoss()
-#lr = 0.01
 optimizer = opt.Adam(base_model.parameters(), lr=args.learning_rate)
 schedualer = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=0.95)
 metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thresholds=None)
