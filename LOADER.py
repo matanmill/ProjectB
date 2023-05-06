@@ -13,7 +13,7 @@ with open('./Hirerachy.json', 'r') as f:
     eval_data = json.load(f)
 
 
-def make_paths(data, labels_num, vocabulary, run_small_data=False, num_small_samples=10):
+def make_paths(data, labels_num, vocabulary,num_small_samples, run_small_data=False):
     one_hot_vec = torch.zeros(labels_num, 1)
     internal_dict = data['data']
     audio_paths = []
@@ -36,13 +36,14 @@ def make_paths(data, labels_num, vocabulary, run_small_data=False, num_small_sam
 
 # add more feature control, like talked about two weeks back
 class AudioDataset(Dataset):
-    def __init__(self, json_path, labels_num, vacbulary_path, run_small_data=False, mode='audio',
+    def __init__(self, json_path, labels_num, vacbulary_path, run_small_data=False, small_data_num=10, mode='audio',
                  feature_type='mfcc', window_size=25, window_type="hamming", num_coeff=20):
         with open(json_path, 'r') as f:
             audio_data = json.load(f)
 
         label_vocabulary = pd.read_csv(vacbulary_path, header=None)
-        audio_paths_list, labels_list = make_paths(audio_data, labels_num, label_vocabulary, run_small_data=run_small_data)
+        audio_paths_list, labels_list = make_paths(audio_data, labels_num, label_vocabulary,
+                                                   run_small_data=run_small_data, num_small_samples=small_data_num)
 
         self.audio_paths = audio_paths_list
         self.labels = labels_list

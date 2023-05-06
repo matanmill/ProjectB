@@ -1,7 +1,6 @@
 # Data paths for use in the project
 
 
-    
 FSD50K_paths = {
     'FSD50K': r'C:\FSD50K',
     #'dev_audio': r'C:\FSD50K\FSD50K.dev_audio',
