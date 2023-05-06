@@ -40,7 +40,7 @@ for i in range(len(fsdeval)):
         new_label_list.append(label)
     new_label_list = ','.join(new_label_list)
     # note, all recording we use are 16kHZ.
-    cur_dict = {"wav": un_resampled_path + '\\'+ fileid + '.wav', "labels": new_label_list}
+    cur_dict = {"wav": un_resampled_path + '//'+ fileid + '.wav', "labels": new_label_list}
 
     if set_info == 'trai':
         fsd_tr_data.append(cur_dict)
@@ -85,7 +85,7 @@ for i in range(len(fsdeval)):
 
     if len(new_label_list) != 0:
         new_label_list = ','.join(new_label_list)
-        cur_dict = {"wav": fsd_path + '\\'+ fileid + '.wav', "labels": new_label_list}
+        cur_dict = {"wav": fsd_path + '//'+ fileid + '.wav', "labels": new_label_list}
         vc_data.append(cur_dict)
         cnt += 1
 
