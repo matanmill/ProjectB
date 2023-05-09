@@ -15,14 +15,14 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
         labels = labels.to(device)
 
         # compute loss by criteria
+        optimizer.zero_grad()
         output = model(data)
         output = torch.squeeze(output, dim=1)
         loss = criterion(output, labels)
 
         # flushing, computing gradients, applying
-        optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm(model.parameters(), 0.5)
+        # torch.nn.utils.clip_grad_norm(model.parameters(), 0.5)
         optimizer.step()
         total_loss += loss.item()
 

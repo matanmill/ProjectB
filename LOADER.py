@@ -81,7 +81,7 @@ class AudioDataset(Dataset):
         audio = torch.from_numpy(audio)
         # If the audio data is less than 1 second, repeat it to make the duration 1 second
         if len(audio) < sr:
-            audio = torch.cat([audio, torch.zeros(sr - len(audio))])
+            audio = torch.cat([audio, torch.zeros(sr - len(audio))])  # fix to cyclic example
         if self.mode == 'audio':
             return audio, label
         elif self.mode == 'features':

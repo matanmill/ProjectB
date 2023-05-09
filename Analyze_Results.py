@@ -8,6 +8,7 @@ from Train import test
 from BaseArchitecture import BaseTransformer
 from torchmetrics.classification import MultilabelConfusionMatrix
 import utils
+import pandas as pd
 
 ##################################################################
 ## Python script to analyze inidividual model rsults more in depth
@@ -23,9 +24,14 @@ parser.add_argument("--test_path", type=str, default='./datafiles/fsd50k_eval_fu
                     help="path for test set")
 parser.add_argument("--test_model_path", type=str, default=r'C:\Users\matan\OneDrive\Desktop\technion\semester 9\Project B\outputs\20230503-180540\model.pth',
                     help="path for model you want to test")
+parser.add_argument("--training_path", type=str, default='./datafiles/fsd50k_tr_full.json',
+                    help="path for test set")
+parser.add_argument("--enhanced_training_path", type=str, default='./datafiles/fsd50k_tr_full_type1_2_5.json',
+                    help="path for test set")
+
 
 args = parser.parse_args()
-
+"""
 # defining - device, test dataset
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 metric = MultilabelAveragePrecision(num_labels=args.num_labels, average='macro', thresholds=None)
@@ -53,3 +59,17 @@ print("mAP score is: " + str(Final_mAP))
 ###### Step 1 - confusion matrix and such
 ConfusionMatrix = MultilabelConfusionMatrix(num_labels=args.num_labels)
 calc_confusion_matrix = utils.Confusion_Matrix(model=model, dataset=test_dataloader,device=device,confusion_matrix=ConfusionMatrix, metric_list=mlap_list, k=8)
+"""
+# plot the normal training to see
+utils.plot_histogram(args.label_vocabulary_path, args.training_path)
+
+# plot the enhanced training to see
+utils.plot_histogram(args.label_vocabulary_path, args.enhanced_training_path)
+
+
+
+
+
+
+
+

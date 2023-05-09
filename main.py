@@ -19,11 +19,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
 parser.add_argument('--dropout', default=0.2, type=int, help='dropout probability for the transformer architecture')
 parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
-parser.add_argument('--learning_rate', default=0.00001, type=float, metavar='LR', help='initial learning rate')
+parser.add_argument('--learning_rate', default=0.0001, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument("--epochs", type=int, default=50, help="number of maximum training epochs")
-parser.add_argument("--saving_path", type=str, default=r'empty',
+parser.add_argument("--saving_path", type=str, default=r'./outputs',
                     help="path for saving results")
-parser.add_argument("--label_vocabulary_path", type=str, default=r'empty',
+parser.add_argument("--label_vocabulary_path", type=str, default=r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',
                     help="path for decoding the labels from provided vocabulary")
 parser.add_argument("--train_path", type=str, default='./datafiles/fsd50k_tr_full.json',
                     help="path for training set")
@@ -34,7 +34,7 @@ parser.add_argument("--test_path", type=str, default='./datafiles/fsd50k_eval_fu
 parser.add_argument("--val_path", type=str, default='./datafiles/fsd50k_val_full.json',
                     help="path for validation set")
 parser.add_argument("--mAP_epsilon", type=int, default=0.001, help=" epsilon for stopping condition based on mAP")
-parser.add_argument("--epoch_plateua", type=int, default=5, help="after <num> epochs without change according to "
+parser.add_argument("--epoch_plateua", type=int, default=10, help="after <num> epochs without change according to "
                                                                  "stopping criteria we want to stop training")
 parser.add_argument('--balanced_set', default=False, help='if use balance sampling', type=str)
 parser.add_argument('--enhanced_set', default=False, help='if use enhanced sampling', type=str)
@@ -52,7 +52,7 @@ if args.enhanced_set:
     train_path = args.train_path_enhanced
 else:
     train_path = args.train_path
-test_path = args.eval_path
+test_path = args.test_path
 val_path = args.val_path
 
 torch.manual_seed(args.seed)
@@ -97,7 +97,7 @@ base_model.to(device)
 
 criterion = nn.HuberLoss()
 optimizer = opt.Adam(base_model.parameters(), lr=args.learning_rate)
-schedualer = torch.optim.lr_scheduler.StepLR(optimizer, 1, gamma=0.95)
+schedualer = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.95)
 metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thresholds=None)
 # can try to implement schedualer from attention is all you need
 
@@ -112,7 +112,7 @@ train_loss = []
 val_loss = []
 val_acc = []
 no_improvement_counter = 0
-
+# add schedualer and schedualer step
 # training process over epochs
 for epoch in range(epoch_num):
     print(f"[INFO]: Epoch {epoch + 1} of {epoch_num}")
@@ -136,21 +136,19 @@ for epoch in range(epoch_num):
                                               epoch=epoch, model=base_model, optimizer=optimizer, criterion=criterion,
                                               path=saving_path, args=args)
 
-    # save the loss and accuracy plots - consider moving them inside loop
-    save_plots(val_acc, train_loss, val_loss, path=saving_path)
-
     # maybe use the best valdiation/mAP score for stopping condition
     if epoch > 5:
         if val_acc[-1] - val_acc[-2] < args.mAP_epsilon:
             no_improvement_counter += 1
         else:
             no_improvement_counter = 0
-        if no_improvement_counter == args.epoch_plateua:
+        if no_improvement_counter == args.epoch_plateua:  # change to 10
             print("Stopping training phase, mAP score doesn't improve")
             break
 
-# save the trained model weights for a final time - don't need to save at the end
-# save_model(epoch_num, base_model, optimizer, criterion, path=saving_path)
+# save the loss and accuracy plots - consider moving them inside loop
+# neptune/weight and biases (wandb) - loggers
+save_plots(val_acc, train_loss, val_loss, path=saving_path)
 
 print('TRAINING COMPLETE, Testing model now')
 ###########################################################################
