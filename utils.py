@@ -5,6 +5,8 @@ import time
 import pandas as pd
 import numpy as np
 from Paths import FSD50K_paths as paths
+import json
+from collections import defaultdict
 
 plt.style.use('ggplot')
 time = time.time()
@@ -45,6 +47,7 @@ class SaveBestModel:
             os.makedirs(path)
 
         # if decided on validation method of saving stuff:
+        # change name validation to loss
         if self.method == "validation" and current_val_loss < self.best_valid_loss:
             self.best_valid_loss = current_val_loss
             print(f"\nBest validation loss: {self.best_valid_loss}")
@@ -223,3 +226,54 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, v
         else:
             print("No visualization of confusion matrix, returning the matrix itself")
             return ConfusionMatrix
+
+
+def create_label_dictionary(vocab_path):
+    vocab = pd.read_csv(vocab_path, header=None)
+    l_dict = {}
+    for index in vocab[0]:
+        l_dict.update({vocab[2][index]: vocab[1][index]})
+
+    return l_dict
+
+
+def plot_histogram(vocabulary_path, json_path, shareY=True):
+    # Load the vocabulary and label dictionary
+    label_dict = create_label_dictionary(vocabulary_path)
+
+    # Load the training data
+    with open(json_path, 'r') as f:
+        training_json = json.load(f)
+
+    # Count the labels
+    label_counts = defaultdict(int)
+    for row in training_json['data']:
+        labels = row['labels'].split(',')
+        for label in labels:
+            label_counts[label_dict[label]] += 1
+
+    # Create the subplots
+    fig, axs = plt.subplots(nrows=2, ncols=4, figsize=(10, 10), sharey=shareY)
+    keys, values = [], []
+    for key, value in label_counts.items():
+        keys.append(key)
+        values.append(value)
+
+    print(sum(label_counts.values()))
+
+    # Plot the data in each subplot
+    for i in range(8):
+        start = i * 25
+        end = (i+1) * 25
+        axs[i//4, i%4].bar(list(label_counts.keys())[start:end], list(label_counts.values())[start:end])
+        # axs[i//4, i%4].set_title('25 labels: {}'.format(i+1))
+
+    # Set the x-axis labels for each subplot
+    for ax in axs.flat:
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+
+    # Set the overall title for the figure
+    fig.suptitle('Label Counts')
+
+    # Show the plot
+    plt.show()

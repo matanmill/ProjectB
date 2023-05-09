@@ -31,8 +31,8 @@ class FrontEnd(nn.Module):
 
     def forward(self, x):
         # print(x.dtype)
-        x = self.fc1(x)
-        x = func.relu(self.fc2(x))
+        x = func.relu(self.fc1(x))
+        x = self.fc2(x)
         return x
 
 
@@ -59,7 +59,7 @@ def transformer_block(dim_model, num_head, dim_feedforward, dropout,
         nn.ReLU(),
         nn.Linear(in_features=dense_dim, out_features=dense_dim),
         nn.ReLU(),
-        nn.Linear(in_features=dense_dim, out_features=dense_dim),
+        nn.Linear(in_features=dense_dim, out_features=dim_model),
         nn.ReLU(),
         LambdaLayer(lambda x: x.transpose(1, 2)),
         nn.AvgPool1d(kernel_size=pooling_kernel, stride=stride),
@@ -95,10 +95,10 @@ class BaseTransformer(nn.Module):
         # Layers
         self.positional_encoder = PositionalEncoding(d_model=dim_model, dropout=dropout)
         self.embedding = FrontEnd(inputdim=400, output_dim=dim_model)
-        self.output1 = nn.Linear(in_features=dense_dim, out_features=dim_feedforward)
+        self.output1 = nn.Linear(in_features=dim_model, out_features=dim_feedforward)
         self.output2 = nn.Linear(in_features=dim_feedforward, out_features=label_number)
-        self.latent1 = nn.Linear(in_features=dense_dim, out_features=dim_model)
-        self.latent2 = nn.Linear(in_features=dense_dim, out_features=dim_model)
+        # self.latent1 = nn.Linear(in_features=dense_dim, out_features=dim_model)
+        # self.latent2 = nn.Linear(in_features=dense_dim, out_features=dim_model)
         self.transformer_1 = transformer_block(dim_model=dim_model, num_head=num_head, dim_feedforward=dim_feedforward,
                                                dropout=dropout, num_encode_layers=num_encode_layers,
                                                dense_dim=dense_dim, pooling_kernel=pooling_kernel_initial, stride=2)
@@ -122,7 +122,8 @@ class BaseTransformer(nn.Module):
                 block.bias.data.zero_()
 
         # initializing weights fc layers
-        linear_layers = [self.latent1, self.latent2, self.output1, self.output2]
+        # linear_layers = [self.latent1, self.latent2, self.output1, self.output2]
+        linear_layers = [self.output1, self.output2]
         for layer in linear_layers:
             layer.weight.data.uniform_(-initrange, initrange)
             layer.bias.data.zero_()
@@ -138,14 +139,14 @@ class BaseTransformer(nn.Module):
 
         # blocks of transformer
         x1 = self.transformer_1(source)
-        x1 = func.relu(self.latent1(x1))
+        # x1 = func.relu(self.latent1(x1))
         x1 = self.transformer_2(x1)
-        x1 = func.relu(self.latent2(x1))
+        # x1 = func.relu(self.latent2(x1))
         x1 = self.transformer_3(x1)
 
         # output
         output = func.relu(self.output1(x1))
-        output = func.relu(self.output2(output))
+        output = func.sigmoid(self.output2(output))
         return output
 
 
