@@ -17,17 +17,17 @@ import numpy as np
 # parsing arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
-parser.add_argument('--dropout', default=0.2, type=int, help='dropout probability for the transformer architecture')
+parser.add_argument('--dropout', default=0.2, type=float, help='dropout probability for the transformer architecture')
 parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
 parser.add_argument('--learning_rate', default=0.0001, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument("--epochs", type=int, default=50, help="number of maximum training epochs")
 parser.add_argument("--saving_path", type=str, default=r'./outputs',
                     help="path for saving results")
-parser.add_argument("--label_vocabulary_path", type=str, default=r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',
+parser.add_argument("--label_vocabulary_path", type=str, default=r'FSD50K/FSD50K.ground_truth/vocabulary.csv',
                     help="path for decoding the labels from provided vocabulary")
 parser.add_argument("--train_path", type=str, default='./datafiles/fsd50k_tr_full.json',
                     help="path for training set")
-parser.add_argument("--train_path_enhanced", type=str, default='./datafiles/fsd50k_tr_type1_2_5.json',
+parser.add_argument("--train_path_enhanced", type=str, default='./datafiles/fsd50k_tr_full_type1_2_5.json',
                     help="path for enhanced training set")
 parser.add_argument("--test_path", type=str, default='./datafiles/fsd50k_eval_full.json',
                     help="path for test set")
@@ -56,16 +56,16 @@ test_path = args.test_path
 val_path = args.val_path
 
 torch.manual_seed(args.seed)
-train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=True)
-val_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=True)
-test_dataset = LOADER.AudioDataset(test_path, args.num_labels, label_vocabulary_path, run_small_data=True)
+train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=False)
+val_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=False)
+test_dataset = LOADER.AudioDataset(test_path, args.num_labels, label_vocabulary_path, run_small_data=False)
 
 # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
 if args.balanced_set:
     print('balanced sampler is being used')
-    samples_weight = np.loadtxt(args.data_train[:-5] + '_weight.csv', delimiter=',')
+    samples_weight = np.loadtxt(args.train_path[:-5] + '_weight.csv', delimiter=',')
     sampler = WeightedRandomSampler(samples_weight, len(samples_weight), replacement=True)
-    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+    train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=False,
                                   collate_fn=LOADER.audio_collate_fn, sampler=sampler)
 else:
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
@@ -97,7 +97,8 @@ base_model.to(device)
 
 criterion = nn.HuberLoss()
 optimizer = opt.Adam(base_model.parameters(), lr=args.learning_rate)
-schedualer = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.95)
+
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
 metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thresholds=None)
 # can try to implement schedualer from attention is all you need
 
@@ -145,6 +146,9 @@ for epoch in range(epoch_num):
         if no_improvement_counter == args.epoch_plateua:  # change to 10
             print("Stopping training phase, mAP score doesn't improve")
             break
+
+    # step for schedualer
+    scheduler.step()
 
 # save the loss and accuracy plots - consider moving them inside loop
 # neptune/weight and biases (wandb) - loggers
