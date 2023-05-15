@@ -19,8 +19,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
 parser.add_argument('--dropout', default=0.2, type=float, help='dropout probability for the transformer architecture')
 parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
-parser.add_argument('--learning_rate', default=0.0001, type=float, metavar='LR', help='initial learning rate')
-parser.add_argument("--epochs", type=int, default=50, help="number of maximum training epochs")
+parser.add_argument('--learning_rate', default=0.0005, type=float, metavar='LR', help='initial learning rate')
+parser.add_argument("--epochs", type=int, default=100, help="number of maximum training epochs")
 parser.add_argument("--saving_path", type=str, default=r'./outputs',
                     help="path for saving results")
 parser.add_argument("--label_vocabulary_path", type=str, default=r'FSD50K/FSD50K.ground_truth/vocabulary.csv',
@@ -39,6 +39,7 @@ parser.add_argument("--epoch_plateua", type=int, default=10, help="after <num> e
 parser.add_argument('--balanced_set', default=False, help='if use balance sampling', type=str)
 parser.add_argument('--enhanced_set', default=False, help='if use enhanced sampling', type=str)
 parser.add_argument('--seed', default=42, type=int, help='seed for randomizing the batch')
+parser.add_argument('--name', default="baseline_lr_0005_100_epochs", type=str, help='name for saving the model')
 args = parser.parse_args()
 
 
@@ -80,7 +81,8 @@ eval_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=F
 # all hyperparameters are already implemented inside the class
 
 num_labels = args.num_labels  # change to parameter recieved, also you added it twice
-saving_path = os.path.join(args.saving_path, time.strftime("%Y%m%d-%H%M%S"))  # add to parameters
+name = time.strftime("%Y%m%d-%H%M%S") + args.name
+saving_path = os.path.join(args.saving_path, name )  # add to parameters
 base_model = BaseTransformer(dropout=args.dropout)
 save_best_model = SaveBestModel()
 
