@@ -8,7 +8,7 @@ FSD50K_paths = {
     'metadata': r'C:\FSD50K\FSD50K.metadata',
     'ground_truth_dev': r'C:\FSD50K\FSD50K.ground_truth\dev.csv',
     'ground_truth_eval': r'C:\FSD50K\FSD50K.ground_truth\eval.csv',
-    'vocabulary':  r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',
+    'vocabulary':  r'./FSD50K.ground_truth/vocabulary.csv',
     #'code_exploring_dev': r'C:\FSD50K\Code_Exploring\dev',
     #'code_exploring_eval': r'C:\FSD50K\Code_Exploring\eval',
     'Resampled_dev': r'C:\FSD50K\Resampled_dev',
