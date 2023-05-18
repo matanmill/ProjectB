@@ -110,6 +110,8 @@ def audio_collate_fn(batch):
     # Get the audio samples and labels from the batch
     audio_samples = [item[0] for item in batch]
     labels = [item[1] for item in batch]
+    audio_wav = [item[2] for item in batch]
+
     labels = torch.cat(labels, dim=1)
     labels = torch.transpose(labels, 0, 1)
     # Stack the audio samples along the first dimension to form a mini-batch
@@ -117,7 +119,7 @@ def audio_collate_fn(batch):
     # Creating the 40X400 input matrix
     audio_batch = torch.reshape(audio_batch, (-1, 40, 400))
     # print("what", audio_batch.size())
-    return audio_batch, labels
+    return audio_batch, labels, audio_wav
 
 
 def features_collate_fn(batch):
