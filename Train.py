@@ -91,8 +91,15 @@ def avg_test(model, dataloader_test, device, metric):
                 single_prediction = predictions[i]  # Prediction for a single sample
                 single_label = labels[i]  # Label for a single sample
                 single_audio_wav = audio_wav[i]
-                clip_pred_dict[single_audio_wav].append(single_prediction)
-                clip_GT_dict[single_audio_wav].append(single_label)
+                if single_audio_wav in clip_pred_dict:
+                    clip_pred_dict[single_audio_wav].append(single_prediction)
+                    clip_GT_dict[single_audio_wav].append(single_label)
+                else: #initialize
+                    clip_pred_dict[single_audio_wav] = []
+                    clip_GT_dict[single_audio_wav] = []
+                    clip_pred_dict[single_audio_wav].append(single_prediction)
+                    clip_GT_dict[single_audio_wav].append(single_label)
+
 
         # now, each key's value is a new sample.
         # question is what will be the label of this new sample?

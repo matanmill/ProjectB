@@ -202,7 +202,7 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, v
     model.eval()
     vocab_list = vocab_to_list(vocabulary_path)
     with torch.no_grad():
-        for index, (data, labels) in enumerate(dataset):
+        for index, (data, labels, audio_wav) in enumerate(dataset):
             # send data and labels to device, compute mAP for this batch
             data = data.to(device)
             labels = labels.to(device)
