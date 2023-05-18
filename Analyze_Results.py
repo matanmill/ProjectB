@@ -4,7 +4,7 @@ import LOADER
 from torchmetrics.classification import MultilabelAveragePrecision
 import argparse
 from Paths import FSD50K_paths as paths
-from Train import test
+from Train import test, avg_test
 from BaseArchitecture import BaseTransformer
 from torchmetrics.classification import MultilabelConfusionMatrix
 import utils
@@ -54,6 +54,11 @@ model.to(device)
 
 # computing AP list
 mlap_list = test(model=model, dataloader_test=test_dataloader, device=device, metric=mlap)
+
+mlap_list_whole_clip = avg_test(model=model, dataloader_test=test_dataloader, device=device, metric=mlap)
+
+# test with whole clip samples
+mlap_list = test
 print("mAP score list is: " + str(mlap_list))
 
 # computing mAP accuracy

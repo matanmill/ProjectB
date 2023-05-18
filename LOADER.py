@@ -83,7 +83,7 @@ class AudioDataset(Dataset):
         if len(audio) < sr:
             audio = torch.cat([audio, torch.zeros(sr - len(audio))])  # fix to cyclic example
         if self.mode == 'audio':
-            return audio, label
+            return audio, label, audio_wav
         elif self.mode == 'features':
             feat_matrix = self.extract_features(audio, sr)
             return feat_matrix, label

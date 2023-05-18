@@ -18,7 +18,6 @@ parser.add_argument("--dataset", type=str, default="audioset", help="training op
 parser.add_argument("--label_indices_path", type=str, default="./class_labels_indices.csv", help="the label vocabulary file.")
 parser.add_argument("--datafile_path", type=str, default='./datafiles/balanced_train_data.json', help="the path of data json file")
 
-
 def make_index_dict(label_csv):
     index_lookup = {}
     with open(label_csv, 'r') as f:
@@ -28,7 +27,6 @@ def make_index_dict(label_csv):
             index_lookup[row['mid']] = row['index']
             line_count += 1
     return index_lookup
-
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -46,7 +44,7 @@ if __name__ == '__main__':
         sample_labels = sample['labels'].split(',')
         for label in sample_labels:
             label_idx = int(index_dict[label])
-            label_count[label_idx] = label_count[label_idx] + 1
+            label_count[label_idx] = label_count[label_idx] + 1 #count how much appearances for each label in *all* dataset
 
     # the reason not using 1 is to avoid underflow for majority classes, add small value to avoid underflow
     label_weight = 1000.0 / (label_count + 0.01)
