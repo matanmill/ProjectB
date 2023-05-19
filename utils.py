@@ -140,16 +140,15 @@ def vocab_to_list(path):
     return label_names
 
 
-def visualize_confusion_matrices(confusion_tensor, vocab_list, mlap_list, indices=None):
+def visualize_confusion_matrices(confusion_tensor, mlap_list, indices=None):
     # If indices are provided, select the corresponding confusion matrices
     if indices is not None:
         confusion_tensor = confusion_tensor[indices]
-        vocab_list = vocab_list[indices]
         mlap_list = mlap_list[indices]
 
     # Create a grid of subplots with one row and N columns
-    n_plots = confusion_tensor.shape[0] // 3
-    fig, axs = plt.subplots(nrows=3, ncols=n_plots, figsize=(2,2))
+    n_plots = confusion_tensor.shape[0] // 2
+    fig, axs = plt.subplots(nrows=2, ncols=n_plots, figsize=(2,2))
     axs = axs.ravel().tolist()
 
     # Loop over the confusion matrices and plot each one
@@ -163,17 +162,17 @@ def visualize_confusion_matrices(confusion_tensor, vocab_list, mlap_list, indice
         im = axs[i].matshow(confusion_matrix, cmap='Blues')
         for j in range(confusion_matrix.shape[0]):
             for p in range(confusion_matrix.shape[1]):
-                axs[i].text(x=p, y=j, s=round(float(confusion_matrix[j, p]), 3), va='center', ha='center', size='medium')
+                axs[i].text(x=p, y=j, s=round(float(confusion_matrix[j, p]), 3), va='center', ha='center', size='small')
 
         # Add axis labels and a colorbar to the plot
         axs[i].set_xlabel('Predicted label', fontsize=8)
         axs[i].set_ylabel('True label', fontsize=8)
-        axs[i].set_title("Label: " + vocab_list[i] + " mAP: " + "{:.3f}".format(mlap_list[i].item()) , fontsize=8)
+        axs[i].set_title(mlap_list[i], fontsize=8)
         axs[i].grid(False)
         fig.colorbar(im, ax=axs[i])
 
     # Adjust the spacing between subplots and show the plot
-    plt.subplots_adjust(wspace=0.5, hspace=0.8)  # add this line
+    plt.subplots_adjust(wspace=1, hspace=1)  # add this line
     plt.show()
 
 
@@ -200,7 +199,7 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, v
     :return: if visualize is false, return the confusion matrix itself
     """
     model.eval()
-    vocab_list = vocab_to_list(vocabulary_path)
+    mlap_list = vocab_to_list(vocabulary_path)
     with torch.no_grad():
         for index, (data, labels) in enumerate(dataset):
             # send data and labels to device, compute mAP for this batch
@@ -217,15 +216,13 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, v
         if top_k:
             metric_list = replace_nan_with_zero(metric_list)
             scores, indices = torch.topk(metric_list, k=k, sorted=False)
-            metric_list_for_topk = metric_list[indices]
             ConfusionMatrix = ConfusionMatrix[indices.tolist()]
             print(ConfusionMatrix)
-            vocab_list = [vocab_list[i] for i in indices]
+            mlap_list = [mlap_list[i] for i in indices]
             visualize_indices = None
 
         if Visualize:
-            visualize_confusion_matrices(confusion_tensor=ConfusionMatrix, vocab_list=vocab_list,
-                                         indices=visualize_indices, mlap_list=metric_list_for_topk)
+            visualize_confusion_matrices(confusion_tensor=ConfusionMatrix, mlap_list=mlap_list, indices=visualize_indices)
         else:
             print("No visualization of confusion matrix, returning the matrix itself")
             return ConfusionMatrix
@@ -240,7 +237,7 @@ def create_label_dictionary(vocab_path):
     return l_dict
 
 
-def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, show=True, path=r'C:\Users\matan\Desktop\ProjectB\outputs'):
+def plot_histogram(vocabulary_path, json_path, shareY=True):
     # Load the vocabulary and label dictionary
     label_dict = create_label_dictionary(vocabulary_path)
 
@@ -276,17 +273,7 @@ def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, sh
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
     # Set the overall title for the figure
-    fig.suptitle(name)
-
-    if save:
-        path = os.path.join(path, "Analyze Results")
-        if not os.path.exists(path):
-            os.makedirs(path)
-        plt.savefig(os.path.join(path, name.replace(" ", "_")), dpi=800, )
+    fig.suptitle('Label Counts')
 
     # Show the plot
-    if show:
-        plt.show()
-
-
-def histogram_mlap(mlap_list):
+    plt.show()

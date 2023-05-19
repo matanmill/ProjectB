@@ -80,7 +80,8 @@ eval_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=F
 # all hyperparameters are already implemented inside the class
 
 num_labels = args.num_labels  # change to parameter recieved, also you added it twice
-saving_path = os.path.join(args.saving_path, time.strftime("%Y%m%d-%H%M%S"))  # add to parameters
+name = time.strftime("%Y%m%d-%H%M%S") + args.name
+saving_path = os.path.join(args.saving_path, name )  # add to parameters
 base_model = BaseTransformer(dropout=args.dropout)
 save_best_model = SaveBestModel()
 
@@ -97,7 +98,8 @@ base_model.to(device)
 
 criterion = nn.HuberLoss()
 optimizer = opt.Adam(base_model.parameters(), lr=args.learning_rate)
-schedualer = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
+
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.9)
 metric = MultilabelAveragePrecision(num_labels=num_labels, average='macro', thresholds=None)
 # can try to implement schedualer from attention is all you need
 
@@ -145,9 +147,6 @@ for epoch in range(epoch_num):
         if no_improvement_counter == args.epoch_plateua:  # change to 10
             print("Stopping training phase, mAP score doesn't improve")
             break
-
-    # schedualer update learning rate for next epoch
-    schedualer.step()
 
 # save the loss and accuracy plots - consider moving them inside loop
 # neptune/weight and biases (wandb) - loggers

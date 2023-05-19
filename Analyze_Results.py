@@ -4,7 +4,7 @@ import LOADER
 from torchmetrics.classification import MultilabelAveragePrecision
 import argparse
 from Paths import FSD50K_paths as paths
-from Train import test
+from Train import test, avg_test
 from BaseArchitecture import BaseTransformer
 from torchmetrics.classification import MultilabelConfusionMatrix
 import utils
@@ -22,7 +22,7 @@ parser.add_argument("--label_vocabulary_path", type=str, default=paths['vocabula
                     help="path for decoding the labels from provided vocabulary")
 parser.add_argument("--test_path", type=str, default='./datafiles/fsd50k_eval_full.json',
                     help="path for test set")
-parser.add_argument("--test_model_path", type=str, default=r'./outputs/20230512-082422_Enhanced&Balanced/model.pth',
+parser.add_argument("--test_model_path", type=str, default=r'./outputs/20230513-091155baseline_lr_00001/model.pth',
                     help="path for model you want to test")
 parser.add_argument("--training_path", type=str, default='./datafiles/fsd50k_tr_full.json',
                     help="path for test set")
@@ -54,6 +54,11 @@ model.to(device)
 
 # computing AP list
 mlap_list = test(model=model, dataloader_test=test_dataloader, device=device, metric=mlap)
+
+mlap_list_whole_clip = avg_test(model=model, dataloader_test=test_dataloader, device=device, metric=mlap)
+
+# test with whole clip samples
+mlap_list = test
 print("mAP score list is: " + str(mlap_list))
 
 # computing mAP accuracy
