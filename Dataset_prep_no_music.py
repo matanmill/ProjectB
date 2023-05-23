@@ -1,15 +1,7 @@
-####### based on code from PSLA article #######
-
 import numpy as np
 import json
 import os
 from Paths import FSD50K_paths
-import librosa
-import soundfile as sf
-
-# dataset downloaded from https://zenodo.org/record/4060432#.YXXR0tnMLfs
-# please change it to your FSD50K dataset path
-# the data organization might change with versioning, the code is tested early 2021
 
 fsd_path = FSD50K_paths['Resampled_eval']
 un_resampled_path = FSD50K_paths['Resampled_dev']
@@ -18,7 +10,6 @@ un_resampled_path = FSD50K_paths['Resampled_dev']
 fsd_dev_csv = FSD50K_paths['ground_truth_dev']
 fsdeval = np.loadtxt(fsd_dev_csv, skiprows=1, dtype=str)
 tr_cnt, val_cnt = 0, 0
-
 
 # only apply to the vocal sound data
 fsd_tr_data = []
@@ -35,12 +26,11 @@ for i in range(len(fsdeval)):
 
     labels = labels.split('",')[0]
     label_list = labels.split(',')
-    new_label_list = []
-    for label in label_list:
-        new_label_list.append(label)
+    new_label_list = [label for label in label_list if label not in ['/m/04rlf', '/m/04szw']]
+    if len(new_label_list) == 0:
+        continue  # Skip adding this sample if all labels are excluded
     new_label_list = ','.join(new_label_list)
-    # note, all recording we use are 16kHZ.
-    cur_dict = {"wav": un_resampled_path + '//'+ fileid + '.wav', "labels": new_label_list}
+    cur_dict = {"wav": un_resampled_path + '//' + fileid + '.wav', "labels": new_label_list}
 
     if set_info == 'trai':
         fsd_tr_data.append(cur_dict)
@@ -54,11 +44,11 @@ for i in range(len(fsdeval)):
 if not os.path.exists('datafiles'):
     os.mkdir('datafiles')
 
-with open('./datafiles/fsd50k_tr_full.json', 'w') as f:
+with open('./datafiles/fsd50k_tr_full_no_music.json', 'w') as f:
     json.dump({'data': fsd_tr_data}, f, indent=1)
 print('Processed {:d} samples for the FSD50K training set.'.format(tr_cnt))
 
-with open('./datafiles/fsd50k_val_full.json', 'w') as f:
+with open('./datafiles/fsd50k_val_full_no_music.json', 'w') as f:
     json.dump({'data': fsd_val_data}, f, indent=1)
 print('Processed {:d} samples for the FSD50K validation set.'.format(val_cnt))
 
@@ -79,17 +69,15 @@ for i in range(len(fsdeval)):
         labels = fsdeval[i].split(',')[2]
 
     label_list = labels.split(',')
-    new_label_list = []
-    for label in label_list:
-        new_label_list.append(label)
+    new_label_list = [label for label in label_list if label not in ['/m/04rlf', '/m/04szw']]
 
     if len(new_label_list) != 0:
         new_label_list = ','.join(new_label_list)
-        cur_dict = {"wav": fsd_path + '//'+ fileid + '.wav', "labels": new_label_list}
+        cur_dict = {"wav": fsd_path + '//' + fileid + '.wav', "labels": new_label_list}
         vc_data.append(cur_dict)
         cnt += 1
 
-with open('./datafiles/fsd50k_eval_full.json', 'w') as f:
+with open('./datafiles/fsd50k_eval_full_no_music.json', 'w') as f:
     json.dump({'data': vc_data}, f, indent=1)
 print('Processed {:d} samples for the FSD50K evaluation set.'.format(cnt))
 

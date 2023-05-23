@@ -16,14 +16,14 @@ import numpy as np
 #########################################################################
 # parsing arguments
 parser = argparse.ArgumentParser()
-parser.add_argument('--num_labels', default=200, type=int, help='number of labels')
+parser.add_argument('--num_labels', default=198, type=int, help='number of labels')
 parser.add_argument('--dropout', default=0.2, type=int, help='dropout probability for the transformer architecture')
 parser.add_argument('--batch_size', default=32, type=int, metavar='N', help='mini-batch size')
 parser.add_argument('--learning_rate', default=0.0001, type=float, metavar='LR', help='initial learning rate')
 parser.add_argument("--epochs", type=int, default=50, help="number of maximum training epochs")
 parser.add_argument("--saving_path", type=str, default=r'./outputs',
                     help="path for saving results")
-parser.add_argument("--label_vocabulary_path", type=str, default=r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',
+parser.add_argument("--label_vocabulary_path", type=str, default=r'C:\FSD50K\FSD50K.ground_truth\vocabulary_wo_music.csv',
                     help="path for decoding the labels from provided vocabulary")
 parser.add_argument("--train_path", type=str, default='./datafiles/fsd50k_tr_full.json',
                     help="path for training set")
@@ -39,6 +39,8 @@ parser.add_argument("--epoch_plateua", type=int, default=10, help="after <num> e
 parser.add_argument('--balanced_set', default=False, help='if use balance sampling', type=str)
 parser.add_argument('--enhanced_set', default=False, help='if use enhanced sampling', type=str)
 parser.add_argument('--seed', default=42, type=int, help='seed for randomizing the batch')
+parser.add_argument('--name', default="Test1", type=str, help='name of test run')
+parser.add_argument('--small_data', default=True, type=bool, help='for debugging, maybe you want to use a small dataset')
 args = parser.parse_args()
 
 
@@ -56,9 +58,9 @@ test_path = args.test_path
 val_path = args.val_path
 
 torch.manual_seed(args.seed)
-train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=True)
-val_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=True)
-test_dataset = LOADER.AudioDataset(test_path, args.num_labels, label_vocabulary_path, run_small_data=True)
+train_dataset = LOADER.AudioDataset(train_path, args.num_labels, label_vocabulary_path, run_small_data=args.small_data)
+val_dataset = LOADER.AudioDataset(val_path, args.num_labels, label_vocabulary_path, run_small_data=args.small_data)
+test_dataset = LOADER.AudioDataset(test_path, args.num_labels, label_vocabulary_path, run_small_data=args.small_data)
 
 # Create the dataloader  #######!!add num_workers if we have GPU!!!!!!!##########
 if args.balanced_set:
@@ -82,7 +84,7 @@ eval_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=F
 num_labels = args.num_labels  # change to parameter recieved, also you added it twice
 name = time.strftime("%Y%m%d-%H%M%S") + args.name
 saving_path = os.path.join(args.saving_path, name )  # add to parameters
-base_model = BaseTransformer(dropout=args.dropout)
+base_model = BaseTransformer(dropout=args.dropout, label_number=args.num_labels)
 save_best_model = SaveBestModel()
 
 # split the training between all GPU's available

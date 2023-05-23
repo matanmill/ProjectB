@@ -36,6 +36,7 @@ args = parser.parse_args()
 
 # defining - device, test dataset
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+## first metric is for final, second metric is for list of AP's
 metric = MultilabelAveragePrecision(num_labels=args.num_labels, average='macro', thresholds=None)
 mlap = MultilabelAveragePrecision(num_labels=args.num_labels, average=None, thresholds=None)
 test_dataset = LOADER.AudioDataset(args.test_path, args.num_labels, args.label_vocabulary_path,
@@ -48,7 +49,7 @@ test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size,
 checkpoint = torch.load(args.test_model_path, map_location=device)  # add to parser - testing folder wanted
 model = BaseTransformer()
 model.load_state_dict(checkpoint['model_state_dict'])
-check = checkpoint['hyper_parameters'] # this is for validation
+check = checkpoint['hyper_parameters']  # this is for validation - prints all the args
 print(check)
 model.to(device)
 

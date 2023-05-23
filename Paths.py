@@ -11,7 +11,7 @@ FSD50K_paths = {
     'vocabulary':  r'C:\FSD50K\FSD50K.ground_truth\vocabulary.csv',
     #'code_exploring_dev': r'C:\FSD50K\Code_Exploring\dev',
     #'code_exploring_eval': r'C:\FSD50K\Code_Exploring\eval',
-    'Resampled_dev': r'C:\FSD50K\Resampled_dev',
-    "Resampled_eval": r'C:\FSD50K\Resamples_eval'
+    'Resampled_dev': r'C:\FSD50K\FSDK50.dev_audio\Resampled_dev',
+    "Resampled_eval": r'C:\FSD50K\FSDK50.eval_audio\Resamples_eval'
 }
 
