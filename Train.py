@@ -7,11 +7,7 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
     total_loss = 0
 
     for index, (data, labels, audio_wav) in enumerate(dataloader_train):
-        # send data and labels to device
-        # data = torch.reshape(data, (-1, 40, 400))
         data = data.to(device)
-        # labels = torch.cat(labels, dim=1)
-        # labels = torch.transpose(labels, 0, 1)
         labels = labels.to(device)
 
         # compute loss by criteria
@@ -22,7 +18,6 @@ def train(model: nn.Module, dataloader_train, optimizer, criterion, device):
 
         # flushing, computing gradients, applying
         loss.backward()
-        # torch.nn.utils.clip_grad_norm(model.parameters(), 0.5)
         optimizer.step()
         total_loss += loss.item()
 
@@ -71,8 +66,10 @@ def test(model, dataloader_test, device, metric):
         metric.reset()
         return score
 
+
 # making mAP calculation based on clips and not on 1 sec's sample
 def avg_test(model, dataloader_test, device, metric):
+    ##### this function is extremely inefficient - needs further work
     model.eval()
     with torch.no_grad():
         clip_pred_dict = {} #dictionary of clips and their predicted labels. key:clip , value:list of one-secs labels
@@ -94,42 +91,22 @@ def avg_test(model, dataloader_test, device, metric):
                 if single_audio_wav in clip_pred_dict:
                     clip_pred_dict[single_audio_wav].append(single_prediction)
                     clip_GT_dict[single_audio_wav].append(single_label)
-                else: #initialize
+                # initialize
+                else:
                     clip_pred_dict[single_audio_wav] = []
                     clip_GT_dict[single_audio_wav] = []
                     clip_pred_dict[single_audio_wav].append(single_prediction)
                     clip_GT_dict[single_audio_wav].append(single_label)
 
-
-        # now, each key's value is a new sample.
-        # question is what will be the label of this new sample?
-        # let's make an averaged softmax
+            # caculating stuff for the entire test
         for audio_wav, preds in clip_pred_dict.items():
-            avg_softmax = torch.mean(preds, dim=1, keepdim=True)
-            metric(avg_softmax, (clip_GT_dict[audio_wav])[:,0])
-            # predictions = predictions.detach()
+            preds = torch.mean(torch.stack(preds), dim=0, keepdim=True)
+            labels = torch.unsqueeze(clip_GT_dict[audio_wav][0], dim=0)
+            metric(preds, labels)
 
-        score = metric.compute()
+        mean_score = metric.compute()
         metric.reset()
-        return score
+        return mean_score
 
-
-"""
-def test(model, dataloader_test, criterion, device, metric):
-    score = 0
-    batch_num = len(dataloader_test)
-    for index, (data, labels) in enumerate(dataloader_test):
-        # send data and labels to device, compute mAP for this batch
-        data = data.to(device)
-        labels = labels.to(device)
-        labels = labels.to(torch.long)
-        predictions = model(data)
-        predictions = torch.squeeze(predictions, dim=1)
-        metric(predictions, labels)
-
-    score = metric.compute()
-    metric.reset()
-    return score
-"""
 
 
