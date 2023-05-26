@@ -13,7 +13,7 @@ with open('./Hirerachy.json', 'r') as f:
     eval_data = json.load(f)
 
 
-def make_paths(data, labels_num, vocabulary,num_small_samples, run_small_data=False):
+def make_paths(data, labels_num, vocabulary, num_small_samples, run_small_data=False):
     one_hot_vec = torch.zeros(labels_num, 1)
     internal_dict = data['data']
     audio_paths = []
