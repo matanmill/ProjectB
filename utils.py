@@ -140,31 +140,16 @@ def vocab_to_list(path):
     return label_names
 
 
-def visualize_confusion_matrices(confusion_tensor, mlap_list, indices=None, saving_path=None, name="Confusion_matrix_top_12", show_plot=False):
-    """
-    :param confusion_tensor: tensor containing all confusion matrices to be plotted
-    :param mlap_list: list of mAP for confusion matrices
-    :param indices: indices for compatability
-    :param saving_path: path to save the plot
-    :param name: name of figure to save
-    :param show_plot:
-    :return:
-    """
-
-    if saving_path is None:
-        print("No path was given, not saving anything!")
-        exit(1)
-    else:
-        saving_path = os.path.join(saving_path, name)
-
+def visualize_confusion_matrices(confusion_tensor, vocab_list, mlap_list, indices=None):
     # If indices are provided, select the corresponding confusion matrices
     if indices is not None:
         confusion_tensor = confusion_tensor[indices]
+        vocab_list = vocab_list[indices]
         mlap_list = mlap_list[indices]
 
     # Create a grid of subplots with one row and N columns
-    n_plots = confusion_tensor.shape[0] // 2
-    fig, axs = plt.subplots(nrows=2, ncols=n_plots, figsize=(2,2))
+    n_plots = confusion_tensor.shape[0] // 3
+    fig, axs = plt.subplots(nrows=3, ncols=n_plots, figsize=(2,2))
     axs = axs.ravel().tolist()
 
     # Loop over the confusion matrices and plot each one
@@ -178,20 +163,18 @@ def visualize_confusion_matrices(confusion_tensor, mlap_list, indices=None, savi
         im = axs[i].matshow(confusion_matrix, cmap='Blues')
         for j in range(confusion_matrix.shape[0]):
             for p in range(confusion_matrix.shape[1]):
-                axs[i].text(x=p, y=j, s=round(float(confusion_matrix[j, p]), 3), va='center', ha='center', size='small')
+                axs[i].text(x=p, y=j, s=round(float(confusion_matrix[j, p]), 3), va='center', ha='center', size='medium')
 
         # Add axis labels and a colorbar to the plot
         axs[i].set_xlabel('Predicted label', fontsize=8)
         axs[i].set_ylabel('True label', fontsize=8)
-        axs[i].set_title(mlap_list[i], fontsize=8)
+        axs[i].set_title("Label: " + vocab_list[i] + " mAP: " + "{:.3f}".format(mlap_list[i].item()) , fontsize=8)
         axs[i].grid(False)
         fig.colorbar(im, ax=axs[i])
 
     # Adjust the spacing between subplots and show the plot
-    plt.subplots_adjust(wspace=1, hspace=1)  # add this line
-    plt.savefig(saving_path, dpi=800)
-    if show_plot:
-        plt.show()
+    plt.subplots_adjust(wspace=0.5, hspace=0.8)  # add this line
+    plt.show()
 
 
 def replace_nan_with_zero(tensor):
@@ -202,8 +185,7 @@ def replace_nan_with_zero(tensor):
     return tensor
 
 
-def Confusion_Matrix(model, dataset, device, confusion_matrix, saving_path, Visualize=True, visualize_indices=None,
-                     vocabulary_path=paths['vocabulary'], top_k=True, k=20, metric_list=None):
+def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, visualize_indices=None, vocabulary_path=paths['vocabulary'], top_k=True, k=20, metric_list=None):
     """
     :param model: model you want to create a confusion matrix for
     :param dataset: test dataset
@@ -215,13 +197,12 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, saving_path, Visu
     :param top_k: bool, create a confusion matrix only for top-k classes (metric-wise)
     :param k: k for top k
     :param metric_list: list of labels with AP score (could be anything)
-    :param saving_path: path to save the confusion matrix generated
     :return: if visualize is false, return the confusion matrix itself
     """
     model.eval()
-    mlap_list = vocab_to_list(vocabulary_path)
+    vocab_list = vocab_to_list(vocabulary_path)
     with torch.no_grad():
-        for index, (data, labels) in enumerate(dataset):
+        for index, (data, labels, audio_wav) in enumerate(dataset):
             # send data and labels to device, compute mAP for this batch
             data = data.to(device)
             labels = labels.to(device)
@@ -236,13 +217,15 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, saving_path, Visu
         if top_k:
             metric_list = replace_nan_with_zero(metric_list)
             scores, indices = torch.topk(metric_list, k=k, sorted=False)
+            metric_list_for_topk = metric_list[indices]
             ConfusionMatrix = ConfusionMatrix[indices.tolist()]
             print(ConfusionMatrix)
-            mlap_list = [mlap_list[i] for i in indices]
+            vocab_list = [vocab_list[i] for i in indices]
             visualize_indices = None
 
         if Visualize:
-            visualize_confusion_matrices(confusion_tensor=ConfusionMatrix, mlap_list=mlap_list, indices=visualize_indices, saving_path=saving_path)
+            visualize_confusion_matrices(confusion_tensor=ConfusionMatrix, vocab_list=vocab_list,
+                                         indices=visualize_indices, mlap_list=metric_list_for_topk)
         else:
             print("No visualization of confusion matrix, returning the matrix itself")
             return ConfusionMatrix
@@ -285,7 +268,7 @@ def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, sh
     for i in range(8):
         start = i * 25
         end = (i+1) * 25
-        axs[i // 4, i % 4].bar(list(label_counts.keys())[start:end], list(label_counts.values())[start:end])
+        axs[i//4, i%4].bar(list(label_counts.keys())[start:end], list(label_counts.values())[start:end])
         # axs[i//4, i%4].set_title('25 labels: {}'.format(i+1))
 
     # Set the x-axis labels for each subplot
@@ -299,26 +282,20 @@ def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, sh
         path = os.path.join(path, "Analyze Results")
         if not os.path.exists(path):
             os.makedirs(path)
-        plt.savefig(os.path.join(path, name.replace(" ", "_")), dpi=800)
+        plt.savefig(os.path.join(path, name.replace(" ", "_")), dpi=800, )
 
     # Show the plot
     if show:
         plt.show()
 
 
-def histogram_mlap(mlap_list, show=False, saving_path=None, name="AveragePrecision_hist"):
+def histogram_mlap(mlap_list):
     """
-    :param mlap_list: list of AP scores for calculation of histogram
-    :param show: should you show the plot or only save
-    :param saving_path: path for saving
-    :param name: name of the figure
-    :return: nothing
+    Plots a histogram to show the distribution of mean average precision scores.
+
+    Args:
+        mlap_list (torch.Tensor): A tensor containing 200 mean average precision scores.
     """
-    if saving_path is None:
-        print("No path was given, not saving anything!")
-        exit(1)
-    else:
-        saving_path = os.path.join(saving_path, name)
     # Convert the PyTorch tensor to a NumPy array
     mlap_array = mlap_list.numpy()
     mean_mlap = np.mean(mlap_array)
@@ -329,6 +306,4 @@ def histogram_mlap(mlap_list, show=False, saving_path=None, name="AveragePrecisi
     ax.set_title(f"Mean Average Precision Score: {mean_mlap:.2f}")
     ax.set_xlabel("Average Precision")
     ax.set_ylabel("Frequency")
-
-    if show:
-        plt.show()
+    plt.show()

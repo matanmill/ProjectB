@@ -95,8 +95,8 @@ print('Processed {:d} samples for the FSD50K evaluation set.'.format(cnt))
 
 
 # generate balanced sampling weight file
-#os.system('python ../../src/gen_weight_file.py --dataset fsd50k --label_indices_path {:s} --datafile_path {:s}'.format(
-#    './class_labels_indices.csv', './datafiles/fsd50k_tr_full.json'))
+os.system('python ../../src/gen_weight_file.py --dataset fsd50k --label_indices_path {:s} --datafile_path {:s}'.format(
+    './class_labels_indices.csv', './datafiles/fsd50k_tr_full.json'))
 
 # (optional) create label enhanced set.
 # Go to /src/label_enhancement/

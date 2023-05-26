@@ -3,17 +3,18 @@ import torch
 import math
 import torch.nn as nn
 import torch.nn.functional as func
+import librosa.feature as feat
+import librosa.effects as effects
 import numpy as np
 
 
 # class for Front-End + Patches
 class FrontEnd(nn.Module):
 
-    def __init__(self, inputdim=400, output_dim=64, latent_dim=2048, dropout=0.2):
+    def __init__(self, inputdim=400, output_dim=64, latent_dim=2048):
         super().__init__()
         self.fc1 = nn.Linear(in_features=inputdim, out_features=latent_dim)
         self.fc2 = nn.Linear(in_features=latent_dim, out_features=output_dim)
-        self.dropout = nn.Dropout(p=dropout)
 
         self.init_weights()
         # print(self.fc1.weight.dtype)
@@ -30,8 +31,8 @@ class FrontEnd(nn.Module):
 
     def forward(self, x):
         # print(x.dtype)
-        x = self.dropout(func.relu(self.fc1(x)))
-        x = self.dropout(self.fc2(x))
+        x = func.relu(self.fc1(x))
+        x = self.fc2(x)
         return x
 
 
@@ -56,13 +57,10 @@ def transformer_block(dim_model, num_head, dim_feedforward, dropout,
         nn.TransformerEncoder(encoder_layer=encoder_layer, num_layers=num_encode_layers),
         nn.Linear(in_features=dim_model, out_features=dense_dim),
         nn.ReLU(),
-        nn.Dropout(p=dropout),
         nn.Linear(in_features=dense_dim, out_features=dense_dim),
         nn.ReLU(),
-        nn.Dropout(p=dropout),
         nn.Linear(in_features=dense_dim, out_features=dim_model),
         nn.ReLU(),
-        nn.Dropout(p=dropout),
         LambdaLayer(lambda x: x.transpose(1, 2)),
         nn.AvgPool1d(kernel_size=pooling_kernel, stride=stride),
         LambdaLayer(lambda x: x.transpose(1, 2)))
@@ -96,10 +94,11 @@ class BaseTransformer(nn.Module):
 
         # Layers
         self.positional_encoder = PositionalEncoding(d_model=dim_model, dropout=dropout)
-        self.embedding = FrontEnd(inputdim=400, output_dim=dim_model, dropout=dropout)
-        self.dropout = nn.Dropout(p=dropout)
+        self.embedding = FrontEnd(inputdim=400, output_dim=dim_model)
         self.output1 = nn.Linear(in_features=dim_model, out_features=dim_feedforward)
         self.output2 = nn.Linear(in_features=dim_feedforward, out_features=label_number)
+        # self.latent1 = nn.Linear(in_features=dense_dim, out_features=dim_model)
+        # self.latent2 = nn.Linear(in_features=dense_dim, out_features=dim_model)
         self.transformer_1 = transformer_block(dim_model=dim_model, num_head=num_head, dim_feedforward=dim_feedforward,
                                                dropout=dropout, num_encode_layers=num_encode_layers,
                                                dense_dim=dense_dim, pooling_kernel=pooling_kernel_initial, stride=2)
@@ -109,6 +108,7 @@ class BaseTransformer(nn.Module):
         self.transformer_3 = transformer_block(dim_model=dim_model, num_head=num_head, dim_feedforward=dim_feedforward,
                                                dropout=dropout, num_encode_layers=num_encode_layers,
                                                dense_dim=dense_dim, pooling_kernel=pooling_kernel_last, stride=1)
+
         self.init_weights()
 
     def init_weights(self):
@@ -139,11 +139,13 @@ class BaseTransformer(nn.Module):
 
         # blocks of transformer
         x1 = self.transformer_1(source)
+        # x1 = func.relu(self.latent1(x1))
         x1 = self.transformer_2(x1)
+        # x1 = func.relu(self.latent2(x1))
         x1 = self.transformer_3(x1)
 
         # output
-        output = self.dropout(func.relu(self.output1(x1)))
+        output = func.relu(self.output1(x1))
         output = func.sigmoid(self.output2(output))
         return output
 
