@@ -140,7 +140,23 @@ def vocab_to_list(path):
     return label_names
 
 
-def visualize_confusion_matrices(confusion_tensor, mlap_list, indices=None):
+def visualize_confusion_matrices(confusion_tensor, mlap_list, indices=None, saving_path=None, name="Confusion_matrix_top_12", show_plot=False):
+    """
+    :param confusion_tensor: tensor containing all confusion matrices to be plotted
+    :param mlap_list: list of mAP for confusion matrices
+    :param indices: indices for compatability
+    :param saving_path: path to save the plot
+    :param name: name of figure to save
+    :param show_plot:
+    :return:
+    """
+
+    if saving_path is None:
+        print("No path was given, not saving anything!")
+        exit(1)
+    else:
+        saving_path = os.path.join(saving_path, name)
+
     # If indices are provided, select the corresponding confusion matrices
     if indices is not None:
         confusion_tensor = confusion_tensor[indices]
@@ -173,7 +189,9 @@ def visualize_confusion_matrices(confusion_tensor, mlap_list, indices=None):
 
     # Adjust the spacing between subplots and show the plot
     plt.subplots_adjust(wspace=1, hspace=1)  # add this line
-    plt.show()
+    plt.savefig(saving_path, dpi=800)
+    if show_plot:
+        plt.show()
 
 
 def replace_nan_with_zero(tensor):
@@ -184,7 +202,8 @@ def replace_nan_with_zero(tensor):
     return tensor
 
 
-def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, visualize_indices=None, vocabulary_path=paths['vocabulary'], top_k=True, k=20, metric_list=None):
+def Confusion_Matrix(model, dataset, device, confusion_matrix, saving_path, Visualize=True, visualize_indices=None,
+                     vocabulary_path=paths['vocabulary'], top_k=True, k=20, metric_list=None):
     """
     :param model: model you want to create a confusion matrix for
     :param dataset: test dataset
@@ -196,6 +215,7 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, v
     :param top_k: bool, create a confusion matrix only for top-k classes (metric-wise)
     :param k: k for top k
     :param metric_list: list of labels with AP score (could be anything)
+    :param saving_path: path to save the confusion matrix generated
     :return: if visualize is false, return the confusion matrix itself
     """
     model.eval()
@@ -222,7 +242,7 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, Visualize=True, v
             visualize_indices = None
 
         if Visualize:
-            visualize_confusion_matrices(confusion_tensor=ConfusionMatrix, mlap_list=mlap_list, indices=visualize_indices)
+            visualize_confusion_matrices(confusion_tensor=ConfusionMatrix, mlap_list=mlap_list, indices=visualize_indices, saving_path=saving_path)
         else:
             print("No visualization of confusion matrix, returning the matrix itself")
             return ConfusionMatrix
@@ -237,7 +257,7 @@ def create_label_dictionary(vocab_path):
     return l_dict
 
 
-def plot_histogram(vocabulary_path, json_path, shareY=True):
+def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, show=True, path=r'C:\Users\matan\Desktop\ProjectB\outputs'):
     # Load the vocabulary and label dictionary
     label_dict = create_label_dictionary(vocabulary_path)
 
@@ -265,7 +285,7 @@ def plot_histogram(vocabulary_path, json_path, shareY=True):
     for i in range(8):
         start = i * 25
         end = (i+1) * 25
-        axs[i//4, i%4].bar(list(label_counts.keys())[start:end], list(label_counts.values())[start:end])
+        axs[i // 4, i % 4].bar(list(label_counts.keys())[start:end], list(label_counts.values())[start:end])
         # axs[i//4, i%4].set_title('25 labels: {}'.format(i+1))
 
     # Set the x-axis labels for each subplot
@@ -273,7 +293,42 @@ def plot_histogram(vocabulary_path, json_path, shareY=True):
         ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 
     # Set the overall title for the figure
-    fig.suptitle('Label Counts')
+    fig.suptitle(name)
+
+    if save:
+        path = os.path.join(path, "Analyze Results")
+        if not os.path.exists(path):
+            os.makedirs(path)
+        plt.savefig(os.path.join(path, name.replace(" ", "_")), dpi=800)
 
     # Show the plot
-    plt.show()
+    if show:
+        plt.show()
+
+
+def histogram_mlap(mlap_list, show=False, saving_path=None, name="AveragePrecision_hist"):
+    """
+    :param mlap_list: list of AP scores for calculation of histogram
+    :param show: should you show the plot or only save
+    :param saving_path: path for saving
+    :param name: name of the figure
+    :return: nothing
+    """
+    if saving_path is None:
+        print("No path was given, not saving anything!")
+        exit(1)
+    else:
+        saving_path = os.path.join(saving_path, name)
+    # Convert the PyTorch tensor to a NumPy array
+    mlap_array = mlap_list.numpy()
+    mean_mlap = np.mean(mlap_array)
+
+    # Plot the histogram using Matplotlib
+    fig, ax = plt.subplots()
+    ax.hist(mlap_array, bins=20)
+    ax.set_title(f"Mean Average Precision Score: {mean_mlap:.2f}")
+    ax.set_xlabel("Average Precision")
+    ax.set_ylabel("Frequency")
+
+    if show:
+        plt.show()
