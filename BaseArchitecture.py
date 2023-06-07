@@ -144,7 +144,7 @@ class BaseTransformer(nn.Module):
 
         # output
         output = self.dropout(func.relu(self.output1(x1)))
-        output = func.sigmoid(self.output2(output))
+        output = torch.sigmoid(self.output2(output))
         return output
 
 

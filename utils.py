@@ -133,9 +133,15 @@ def save_plots(valid_acc, train_loss, valid_loss, path):
     plt.savefig(os.path.join(path, 'loss'))
 
 
-def vocab_to_list(path):
+def vocab_to_list(path, id_or_name='name'):
     vocab = pd.read_csv(path, header=None)
-    label_names = vocab.iloc[:, 1]
+    if id_or_name == 'name':
+        location  = 1
+    elif id_or_name == 'id':
+        location = 2
+    else:
+        print('give a proper name hamud matok')
+    label_names = vocab.iloc[:, location]
     label_names = list(map(str, label_names))
     return label_names
 
@@ -237,7 +243,7 @@ def Confusion_Matrix(model, dataset, device, confusion_matrix, saving_path, Visu
             metric_list = replace_nan_with_zero(metric_list)
             scores, indices = torch.topk(metric_list, k=k, sorted=False)
             ConfusionMatrix = ConfusionMatrix[indices.tolist()]
-            print(ConfusionMatrix)
+            # print(ConfusionMatrix)
             mlap_list = [mlap_list[i] for i in indices]
             visualize_indices = None
 
@@ -257,7 +263,7 @@ def create_label_dictionary(vocab_path):
     return l_dict
 
 
-def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, show=True, path=r'C:\Users\matan\Desktop\ProjectB\outputs'):
+def plot_histogram(vocabulary_path, json_path, shareY=True, sort=False, save=False, show=True, return_dict=False, path=r'C:\Users\matan\Desktop\ProjectB\outputs', name='histogram'):
     # Load the vocabulary and label dictionary
     label_dict = create_label_dictionary(vocabulary_path)
 
@@ -279,7 +285,9 @@ def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, sh
         keys.append(key)
         values.append(value)
 
-    print(sum(label_counts.values()))
+    if sort:
+        label_counts = dict(sorted(label_counts.items(), key=lambda item: item[1], reverse=True))
+
 
     # Plot the data in each subplot
     for i in range(8):
@@ -304,6 +312,9 @@ def plot_histogram(vocabulary_path, json_path, name, shareY=True, save=False, sh
     # Show the plot
     if show:
         plt.show()
+
+    if return_dict:
+        return label_counts
 
 
 def histogram_mlap(mlap_list, show=False, saving_path=None, name="AveragePrecision_hist"):
@@ -332,3 +343,6 @@ def histogram_mlap(mlap_list, show=False, saving_path=None, name="AveragePrecisi
 
     if show:
         plt.show()
+
+
+
